@@ -54,8 +54,9 @@ header.topbar{
   flex-shrink:0;
 }
 .brand{
-  display:flex; align-items:center; gap:10px; margin-bottom:10px;
+  display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px;
 }
+.brand-info{display:flex; align-items:center; gap:10px; min-width:0;}
 .brand .badge{
   width:34px; height:34px; border-radius:9px;
   background:linear-gradient(155deg,var(--gold),var(--gold-dim));
@@ -99,6 +100,31 @@ header.topbar{
 }
 .chip.active{
   background:var(--gold); color:#161206; border-color:var(--gold); font-weight:700;
+}
+
+/* ---------- LIGHT THEME ---------- */
+html[data-theme="light"]{
+  --bg:#f4f2ec;
+  --surface:#ffffff;
+  --surface2:#eeece2;
+  --line:#dcd6c7;
+  --ink:#1c1f26;
+  --ink-dim:#5a5f6d;
+  --ink-faint:#8b8f9c;
+}
+html[data-theme="light"] header.topbar{
+  background:linear-gradient(180deg,#fbfaf5,#f4f2ec 90%);
+}
+html[data-theme="light"] nav.tabbar{
+  background:rgba(255,255,255,0.92);
+}
+html[data-theme="light"] .sheet{
+  box-shadow:0 -10px 40px rgba(0,0,0,0.12);
+}
+.theme-toggle{
+  width:34px; height:34px; border-radius:9px; flex-shrink:0;
+  border:1px solid var(--line); background:var(--surface2); color:var(--ink-dim);
+  font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center;
 }
 
 /* ---------- MAIN SCROLL AREA ---------- */
@@ -164,6 +190,19 @@ main{
   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
 .art-snippet mark, .art-title mark{background:rgba(201,162,39,0.35); color:var(--ink); border-radius:2px; padding:0 1px;}
 .synonym-badge{font-size:10.5px; color:var(--gold); font-weight:700; margin:5px 0 2px; letter-spacing:0.2px;}
+
+/* ---------- RELATED / COMPARE ARTICLES ---------- */
+.compare-label{font-size:11px; font-weight:700; color:var(--ink-faint); letter-spacing:1px; text-transform:uppercase; margin:18px 0 8px;}
+.compare-label:first-child{margin-top:6px;}
+.compare-list{display:flex; flex-direction:column; gap:8px; margin-bottom:4px;}
+.compare-item{padding:10px 12px; border-radius:10px; background:var(--surface2); border:1px solid var(--line); cursor:pointer;}
+.compare-item:active{background:var(--line);}
+.compare-item.is-current{border-color:var(--gold-dim); background:rgba(201,162,39,0.10); cursor:default;}
+.compare-item-head{display:flex; align-items:center; gap:8px; margin-bottom:4px;}
+.compare-lawname{font-size:10.5px; color:var(--ink-faint); font-weight:700; flex-shrink:0;}
+.compare-title{font-size:12.5px; font-weight:700; color:var(--ink);}
+.compare-current-tag{margin-left:auto; font-size:10px; color:var(--gold); font-weight:700; flex-shrink:0;}
+.compare-note{font-size:12px; color:var(--ink-dim); line-height:1.6;}
 
 .empty-state{
   text-align:center; padding:60px 20px; color:var(--ink-faint);
@@ -309,11 +348,14 @@ nav.tabbar button.active{color:var(--gold);}
 
 <header class="topbar">
   <div class="brand">
-    <div class="badge">警</div>
-    <div>
-      <h1>捷警法規快查</h1>
-      <div class="sub">大眾捷運法・社維法・警職法・刑法・跟騷法・轄區要點</div>
+    <div class="brand-info">
+      <div class="badge">警</div>
+      <div>
+        <h1>捷警法規快查</h1>
+        <div class="sub">大眾捷運法・社維法・警職法・刑法・跟騷法・轄區要點</div>
+      </div>
     </div>
+    <button class="theme-toggle" id="themeToggle" aria-label="切換深色／淺色模式">☀️</button>
   </div>
   <div class="searchbar" id="searchbar">
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -390,6 +432,106 @@ const LAW_META = {
   '桃園大眾捷運系統旅客須知': {short:'旅客須知', dot:'dot-xz', icon:'xz', emoji:'🎫'},
 };
 const LAW_ORDER = ['大眾捷運法','社會秩序維護法','警察職權行使法','中華民國刑法','跟蹤騷擾防制法','桃園市政府警察局捷運警察隊與轄區警察機關權責劃分及聯繫要點','桃園大眾捷運系統旅客須知'];
+
+/* ---------- RELATED / COMPARE ARTICLES ----------
+   Groups of articles that often get confused or need side-by-side
+   comparison (e.g. which law/severity applies to a scuffle). */
+const RELATED_GROUPS = [
+  { label:'鬥毆／互毆', items:[
+    {id:148, note:'雙方互毆但未受傷、情節輕微 → 處1.8萬元以下罰鍰（社維法）'},
+    {id:641, note:'已致他人受傷 → 5年以下徒刑或50萬元以下罰金（刑法）'},
+    {id:647, note:'多人聚眾鬥毆致死或重傷 → 在場助勢者最重5年徒刑（刑法）'},
+  ]},
+  { label:'竊盜／搶奪／強盜（財產犯罪光譜）', items:[
+    {id:698, note:'單純竊取財物，未使用強暴脅迫 → 5年以下徒刑（刑法320）'},
+    {id:703, note:'乘人不及抗拒，公然奪取 → 6月以上5年以下徒刑（刑法325）'},
+    {id:706, note:'施強暴脅迫至使不能抗拒而取財 → 5年以上徒刑（刑法328）'},
+  ]},
+  { label:'詐欺', items:[
+    {id:718, note:'普通詐欺 → 5年以下徒刑或50萬元以下罰金（刑法339）'},
+    {id:722, note:'冒用機關名義／3人以上共犯／透過媒體散布 → 加重至1年以上7年以下徒刑（刑法339-4）'},
+  ]},
+  { label:'恐嚇', items:[
+    {id:672, note:'單純恐嚇致生危害安全，未取得財物 → 2年以下徒刑（刑法305）'},
+    {id:730, note:'以恐嚇方式使人交付財物 → 6月以上5年以下徒刑（刑法346）'},
+  ]},
+  { label:'公然侮辱／誹謗', items:[
+    {id:676, note:'當場辱罵，無具體事實指摘 → 拘役或9千元以下罰金（刑法309）'},
+    {id:677, note:'散布具體不實事項損害名譽 → 1年以下徒刑或1.5萬元以下罰金（刑法310）'},
+  ]},
+  { label:'酒駕處置', items:[
+    {id:533, note:'吐氣酒精濃度達0.25mg/L以上即成立公共危險罪 → 3年以下徒刑（刑法185-3）'},
+    {id:164, note:'警察攔停後可要求接受酒精濃度測試檢定（警職法8）'},
+  ]},
+  { label:'跟蹤騷擾', items:[
+    {id:757, note:'反覆為8款行為之一，使人心生畏怖 → 1年以下徒刑或10萬元以下罰金（跟騷法18）'},
+    {id:150, note:'無正當理由跟追他人，經勸阻不聽（未達跟騷法門檻時可用）→ 3萬元以下罰鍰（社維法89）'},
+  ]},
+  { label:'妨害公務', items:[
+    {id:146, note:'言詞行動尚未達強暴脅迫程度 → 拘留或1.2萬元以下罰鍰（社維法85）'},
+    {id:475, note:'已施強暴脅迫妨害執行職務 → 3年以下徒刑（刑法135）'},
+  ]},
+  { label:'無票搭乘', items:[
+    {id:59, note:'補繳票價外加收50倍違約金（大眾捷運法49）'},
+    {id:130, note:'不聽勸阻或不補票 → 1.2萬元以下罰鍰（社維法69，可併用）'},
+  ]},
+  { label:'攜帶危險物品', items:[
+    {id:124, note:'無正當理由攜帶具殺傷力器械／危險物品 → 3日以下拘留或3萬元以下罰鍰（社維法63）'},
+    {id:61, note:'未經許可攜帶危險或易燃物進入捷運系統 → 1萬至100萬元罰鍰（大眾捷運法50-1）'},
+    {id:535, note:'未受允准製造／運輸／持有爆裂物或軍用槍砲 → 2年以下徒刑（刑法186）'},
+  ]},
+  { label:'施用／持有毒品（鴉片罪章）', items:[
+    {id:625, note:'吸食鴉片、施打嗎啡或使用高根、海洛因 → 6月以下徒刑、拘役或1.5萬元以下罰金（刑法262）'},
+    {id:626, note:'意圖供犯罪之用而持有鴉片、嗎啡等 → 拘役或1.5萬元以下罰金（刑法263）'},
+  ]},
+  { label:'賭博', items:[
+    {id:145, note:'於非公共場所之職業賭博場所賭博 → 9千元以下罰鍰（社維法84）'},
+    {id:629, note:'於公共場所或以電子方式賭博財物 → 5萬元以下罰金（刑法266）'},
+  ]},
+  { label:'性騷擾／猥褻', items:[
+    {id:144, note:'以言語、舉動調戲他人，情節較輕 → 6千元以下罰鍰（社維法83）'},
+    {id:582, note:'以強暴脅迫方式為猥褻行為 → 6月以上5年以下徒刑（刑法224）'},
+    {id:584, note:'利用他人精神／身體障礙而為猥褻 → 6月以上5年以下徒刑（刑法225）'},
+  ]},
+  { label:'妨害自由', items:[
+    {id:668, note:'私行拘禁或以非法方法剝奪行動自由 → 5年以下徒刑（刑法302）'},
+    {id:671, note:'以強暴脅迫使人行無義務之事 → 3年以下徒刑（刑法304）'},
+  ]},
+  { label:'侵入他人場所', items:[
+    {id:673, note:'無故侵入住宅、建築物 → 1年以下徒刑（刑法306）'},
+    {id:132, note:'擅入主管機關明示禁止出入處所，不聽勸阻 → 6千元以下罰鍰（社維法71）'},
+  ]},
+  { label:'竊盜與侵占', items:[
+    {id:698, note:'未經同意取走他人持有中的財物 → 竊盜（刑法320）'},
+    {id:714, note:'將自己合法持有他人之物據為己有 → 侵占（刑法335）'},
+  ]},
+  { label:'放火燒燬', items:[
+    {id:518, note:'燒燬現供人使用之住宅或有人所在建築物 → 無期徒刑或7年以上徒刑（刑法173）'},
+    {id:520, note:'燒燬前二者以外之他人所有物，致生公共危險 → 1年以上7年以下徒刑（刑法175）'},
+  ]},
+  { label:'妨害電腦使用', items:[
+    {id:743, note:'無故輸入帳密／入侵他人電腦系統 → 3年以下徒刑（刑法358）'},
+    {id:744, note:'無故取得、刪除或變更他人電磁紀錄 → 5年以下徒刑（刑法359）'},
+  ]},
+  { label:'遺棄', items:[
+    {id:657, note:'單純遺棄無自救力之人 → 6月以下徒刑（刑法293）'},
+    {id:658, note:'依法令或契約有扶養義務卻遺棄，刑度較重 → 6月以上5年以下徒刑（刑法294）'},
+  ]},
+  { label:'傷害程度光譜', items:[
+    {id:641, note:'普通傷害 → 5年以下徒刑或50萬元以下罰金（刑法277）'},
+    {id:642, note:'致人重傷 → 5年以上12年以下徒刑（刑法278）'},
+    {id:634, note:'致人於死（殺人故意）→ 死刑、無期徒刑或10年以上徒刑（刑法271）'},
+  ]},
+];
+
+const RELATED_BY_ID = {};
+RELATED_GROUPS.forEach(g=>{
+  g.items.forEach(it=>{
+    if(!RELATED_BY_ID[it.id]) RELATED_BY_ID[it.id] = [];
+    RELATED_BY_ID[it.id].push(g);
+  });
+});
+
 
 let activeLawFilter = 'all';
 let favorites = [];
@@ -734,6 +876,34 @@ const sheetClose = document.getElementById('sheetClose');
 
 let currentSheetArticleId = null;
 
+function buildCompareHtml(id){
+  const groups = RELATED_BY_ID[id];
+  if(!groups || !groups.length) return '';
+  const seen = new Set();
+  let html = '';
+  groups.forEach(g=>{
+    if(seen.has(g.label)) return;
+    seen.add(g.label);
+    html += `<div class="compare-label">⇄ 比較：${escapeHtml(g.label)}</div><div class="compare-list">`;
+    g.items.forEach(it=>{
+      const art = ART_BY_ID[it.id];
+      if(!art) return;
+      const meta = LAW_META[art.law] || {short:art.law};
+      const isCurrent = it.id === id;
+      html += `<div class="compare-item${isCurrent?' is-current':''}" data-id="${it.id}">
+        <div class="compare-item-head">
+          <span class="compare-lawname">${escapeHtml(meta.short)}</span>
+          <span class="compare-title">${escapeHtml(art.title)}</span>
+          ${isCurrent? `<span class="compare-current-tag">本條</span>` : ''}
+        </div>
+        <div class="compare-note">${escapeHtml(it.note)}</div>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  return html;
+}
+
 function openArticleSheet(id, q){
   const a = ART_BY_ID[id];
   if(!a) return;
@@ -741,10 +911,13 @@ function openArticleSheet(id, q){
   const meta = LAW_META[a.law] || {short:a.law};
   sheetLawname.textContent = `${meta.short}${a.chapter? ' · '+a.chapter : ''}`;
   sheetTitle.innerHTML = highlight(a.title, q);
-  sheetBody.innerHTML = `<div class="content">${highlight(a.content, q)}</div>`;
+  sheetBody.innerHTML = `<div class="content">${highlight(a.content, q)}</div>${buildCompareHtml(id)}`;
   sheetFavBtn.style.display = 'flex';
   sheetFavBtn.classList.toggle('active', isFav(id));
   sheetFavBtn.textContent = isFav(id) ? '★' : '☆';
+  sheetBody.querySelectorAll('.compare-item:not(.is-current)').forEach(el=>{
+    el.addEventListener('click', ()=> openArticleSheet(parseInt(el.dataset.id), ''));
+  });
   showSheet();
 }
 
@@ -820,6 +993,21 @@ tabButtons.forEach(btn=>{
     document.getElementById('mainScroll').scrollTop = 0;
     if(key==='fav') renderFavs();
   });
+});
+
+/* ---------- THEME TOGGLE ---------- */
+const themeToggle = document.getElementById('themeToggle');
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme', theme);
+  themeToggle.textContent = theme === 'light' ? '🌙' : '☀️';
+  try{ localStorage.setItem('jw_theme', theme); }catch(e){}
+}
+let savedTheme = 'dark';
+try{ savedTheme = localStorage.getItem('jw_theme') || 'dark'; }catch(e){ savedTheme = 'dark'; }
+applyTheme(savedTheme);
+themeToggle.addEventListener('click', ()=>{
+  const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  applyTheme(next);
 });
 
 /* init */
