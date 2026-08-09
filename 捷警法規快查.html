@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>捷警法規快查</title>
+<style>
+:root{
+  --bg:#11151b;
+  --surface:#181d26;
+  --surface2:#1f2530;
+  --line:#2a3140;
+  --ink:#e9edf3;
+  --ink-dim:#8e97a8;
+  --ink-faint:#5c6577;
+  --gold:#c9a227;
+  --gold-dim:#8a7222;
+  --cyan:#3fb6c9;
+  --cyan-dim:#2a7d8a;
+  --purple:#9179c9;
+  --purple-dim:#5f4f8f;
+  --danger:#d9614f;
+  --radius:14px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{
+  margin:0; padding:0; height:100%;
+  background:var(--bg); color:var(--ink);
+  font-family:"PingFang TC","Noto Sans TC","Microsoft JhengHei",-apple-system,BlinkMacSystemFont,sans-serif;
+  overscroll-behavior-y:none;
+}
+body{
+  display:flex; flex-direction:column; height:100dvh; overflow:hidden;
+}
+::-webkit-scrollbar{width:0;height:0;}
+
+/* ambient texture */
+body::before{
+  content:"";
+  position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:
+    radial-gradient(ellipse 600px 300px at 15% -5%, rgba(201,162,39,0.07), transparent 60%),
+    radial-gradient(ellipse 500px 260px at 100% 8%, rgba(63,182,201,0.06), transparent 60%);
+}
+
+/* ---------- HEADER ---------- */
+header.topbar{
+  position:relative; z-index:5;
+  padding: calc(10px + var(--safe-top)) 16px 10px;
+  background:linear-gradient(180deg,#141922,#11151b 90%);
+  border-bottom:1px solid var(--line);
+  flex-shrink:0;
+}
+.brand{
+  display:flex; align-items:center; gap:10px; margin-bottom:10px;
+}
+.brand .badge{
+  width:34px; height:34px; border-radius:9px;
+  background:linear-gradient(155deg,var(--gold),var(--gold-dim));
+  display:flex; align-items:center; justify-content:center;
+  font-weight:800; font-size:15px; color:#151005; letter-spacing:-0.5px;
+  box-shadow:0 2px 8px rgba(201,162,39,0.25);
+  flex-shrink:0;
+}
+.brand h1{
+  font-size:16.5px; margin:0; font-weight:700; letter-spacing:0.5px; color:var(--ink);
+}
+.brand .sub{
+  font-size:11px; color:var(--ink-dim); margin-top:1px; letter-spacing:0.3px;
+}
+.searchbar{
+  display:flex; align-items:center; gap:8px;
+  background:var(--surface2); border:1px solid var(--line); border-radius:12px;
+  padding:10px 12px;
+}
+.searchbar svg{flex-shrink:0; opacity:0.55;}
+.searchbar input{
+  flex:1; background:none; border:none; outline:none; color:var(--ink);
+  font-size:15px; font-family:inherit; min-width:0;
+}
+.searchbar input::placeholder{color:var(--ink-faint);}
+.searchbar .clearbtn{
+  display:none; background:none; border:none; color:var(--ink-faint);
+  font-size:18px; padding:2px 4px; cursor:pointer;
+}
+.searchbar.has-text .clearbtn{display:block;}
+
+.lawfilters{
+  display:flex; gap:6px; margin-top:10px; overflow-x:auto; padding-bottom:2px;
+  scrollbar-width:none;
+}
+.lawfilters::-webkit-scrollbar{display:none;}
+.chip{
+  flex-shrink:0; font-size:11.5px; padding:6px 11px; border-radius:999px;
+  border:1px solid var(--line); background:var(--surface); color:var(--ink-dim);
+  white-space:nowrap; cursor:pointer; transition:all .15s;
+}
+.chip.active{
+  background:var(--gold); color:#161206; border-color:var(--gold); font-weight:700;
+}
+
+/* ---------- MAIN SCROLL AREA ---------- */
+main{
+  flex:1; overflow-y:auto; position:relative; z-index:1;
+  padding: 12px 14px calc(90px + var(--safe-bottom));
+  -webkit-overflow-scrolling:touch;
+}
+.view{display:none;}
+.view.active{display:block; animation:fadein .18s ease;}
+@keyframes fadein{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;}}
+
+.section-label{
+  font-size:11px; font-weight:700; color:var(--ink-faint); letter-spacing:1.5px;
+  text-transform:uppercase; margin:18px 4px 8px;
+}
+.section-label:first-child{margin-top:4px;}
+
+/* ---------- SCENARIO CARDS ---------- */
+.scenario-grid{display:flex; flex-direction:column; gap:8px;}
+.scenario-card{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  padding:13px 14px; cursor:pointer; position:relative; overflow:hidden;
+}
+.scenario-card:active{background:var(--surface2);}
+.scenario-card .tagrow{display:flex; align-items:center; gap:8px; margin-bottom:5px;}
+.tagpill{
+  font-size:10px; font-weight:700; padding:2px 8px; border-radius:6px;
+  background:rgba(201,162,39,0.15); color:var(--gold); letter-spacing:0.5px;
+}
+.scenario-card h3{margin:0; font-size:14.5px; font-weight:700; line-height:1.4; color:var(--ink);}
+.scenario-card p.desc{
+  margin:6px 0 0; font-size:12.5px; color:var(--ink-dim); line-height:1.6;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+}
+.chev{position:absolute; right:12px; top:50%; transform:translateY(-50%); color:var(--ink-faint); font-size:18px;}
+
+/* ---------- ARTICLE LIST ---------- */
+.art-list{display:flex; flex-direction:column; gap:7px;}
+.art-card{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  padding:12px 14px; cursor:pointer;
+}
+.art-card:active{background:var(--surface2);}
+.art-top{display:flex; align-items:center; gap:8px;}
+.lawdot{width:7px; height:7px; border-radius:50%; flex-shrink:0;}
+.dot-mrt{background:var(--cyan);}
+.dot-sw{background:var(--gold);}
+.dot-pj{background:var(--gold);}
+.dot-yd{background:var(--purple);}
+.dot-xz{background:var(--cyan);}
+.art-lawname{font-size:10.5px; color:var(--ink-faint); font-weight:600; letter-spacing:0.3px;}
+.art-num{
+  font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+  font-size:11px; font-weight:700; color:var(--ink-dim);
+  margin-left:auto; background:var(--surface2); padding:2px 7px; border-radius:6px;
+  border:1px solid var(--line);
+}
+.art-title{font-size:14px; font-weight:700; margin:6px 0 3px; color:var(--ink);}
+.art-snippet{font-size:12.5px; color:var(--ink-dim); line-height:1.65;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+.art-snippet mark, .art-title mark{background:rgba(201,162,39,0.35); color:var(--ink); border-radius:2px; padding:0 1px;}
+
+.empty-state{
+  text-align:center; padding:60px 20px; color:var(--ink-faint);
+}
+.empty-state .icon{font-size:34px; margin-bottom:10px; opacity:0.5;}
+.empty-state p{font-size:13px; line-height:1.7; margin:0;}
+
+/* ---------- BROWSE (law list) ---------- */
+.law-group{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  margin-bottom:10px; overflow:hidden;
+}
+.law-group-head{
+  padding:14px; display:flex; align-items:center; gap:10px; cursor:pointer;
+}
+.law-icon{
+  width:36px; height:36px; border-radius:9px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; font-size:16px;
+}
+.law-icon.mrt{background:rgba(63,182,201,0.15); color:var(--cyan);}
+.law-icon.sw{background:rgba(201,162,39,0.15); color:var(--gold);}
+.law-icon.pj{background:rgba(201,162,39,0.15); color:var(--gold);}
+.law-icon.yd{background:rgba(145,121,201,0.15); color:var(--purple);}
+.law-icon.xz{background:rgba(63,182,201,0.15); color:var(--cyan);}
+.law-group-head .info{flex:1; min-width:0;}
+.law-group-head h3{margin:0; font-size:14.5px; font-weight:700;}
+.law-group-head .cnt{font-size:11.5px; color:var(--ink-faint); margin-top:1px;}
+.law-group-head .arrow{color:var(--ink-faint); transition:transform .2s; font-size:14px;}
+.law-group.open .arrow{transform:rotate(90deg);}
+.law-group-body{display:none; border-top:1px solid var(--line);}
+.law-group.open .law-group-body{display:block;}
+.chapter-block{padding:10px 14px 4px;}
+.chapter-title{font-size:11px; color:var(--ink-faint); font-weight:700; margin-bottom:6px; padding-left:2px;}
+.mini-art{
+  padding:9px 8px; border-radius:9px; cursor:pointer; display:flex; align-items:baseline; gap:8px;
+}
+.mini-art:active{background:var(--surface2);}
+.mini-art .n{
+  font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace; font-size:11px; color:var(--ink-faint);
+  flex-shrink:0; min-width:52px;
+}
+.mini-art .t{font-size:12.5px; color:var(--ink-dim); line-height:1.5;
+  display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden;}
+
+/* ---------- FAVORITES ---------- */
+.fav-empty{text-align:center; padding:70px 24px; color:var(--ink-faint);}
+.fav-empty .icon{font-size:38px; margin-bottom:12px; opacity:0.4;}
+
+/* ---------- DETAIL SHEET (modal) ---------- */
+.sheet-backdrop{
+  position:fixed; inset:0; background:rgba(4,6,9,0.6); z-index:40;
+  opacity:0; pointer-events:none; transition:opacity .2s;
+  backdrop-filter:blur(2px);
+}
+.sheet-backdrop.show{opacity:1; pointer-events:auto;}
+.sheet{
+  position:fixed; left:0; right:0; bottom:0; z-index:41;
+  background:var(--surface); border-radius:20px 20px 0 0;
+  border:1px solid var(--line); border-bottom:none;
+  max-height:88vh; display:flex; flex-direction:column;
+  transform:translateY(100%); transition:transform .28s cubic-bezier(.32,.72,0,1);
+  box-shadow:0 -10px 40px rgba(0,0,0,0.4);
+}
+.sheet.show{transform:translateY(0);}
+.sheet-handle{width:36px; height:4px; background:var(--line); border-radius:99px; margin:10px auto 4px;}
+.sheet-head{
+  padding:10px 18px 14px; border-bottom:1px solid var(--line);
+  display:flex; align-items:flex-start; gap:10px;
+}
+.sheet-head .htext{flex:1; min-width:0;}
+.sheet-lawname{font-size:11px; color:var(--gold); font-weight:700; letter-spacing:0.3px; margin-bottom:3px;}
+.sheet-title{font-size:17px; font-weight:800; color:var(--ink); line-height:1.4;}
+.sheet-close{
+  background:var(--surface2); border:1px solid var(--line); color:var(--ink-dim);
+  width:30px; height:30px; border-radius:50%; font-size:15px; cursor:pointer; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+}
+.favbtn{
+  background:var(--surface2); border:1px solid var(--line); color:var(--ink-dim);
+  width:30px; height:30px; border-radius:50%; font-size:14px; cursor:pointer; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+}
+.favbtn.active{color:var(--gold); border-color:var(--gold-dim); background:rgba(201,162,39,0.12);}
+.sheet-body{
+  padding:16px 18px calc(24px + var(--safe-bottom)); overflow-y:auto; -webkit-overflow-scrolling:touch;
+}
+.sheet-body .content{
+  font-size:14.5px; line-height:2; color:#dbe1ea; white-space:pre-line;
+}
+.sheet-body .content mark{background:rgba(201,162,39,0.35); color:var(--ink); border-radius:2px;}
+.scenario-detail .summary{
+  font-size:13.5px; line-height:1.85; color:#dbe1ea; margin-bottom:18px;
+  padding:12px 13px; background:var(--surface2); border-radius:11px; border:1px solid var(--line);
+}
+.scenario-detail .steps{list-style:none; margin:0; padding:0; counter-reset:step;}
+.scenario-detail .steps li{
+  counter-increment:step; position:relative; padding:0 0 16px 32px; font-size:13.5px; line-height:1.75; color:var(--ink);
+}
+.scenario-detail .steps li::before{
+  content:counter(step); position:absolute; left:0; top:0;
+  width:22px; height:22px; border-radius:50%; background:var(--gold); color:#161206;
+  font-size:11.5px; font-weight:800; display:flex; align-items:center; justify-content:center;
+}
+.scenario-detail .steps li::after{
+  content:""; position:absolute; left:11px; top:24px; bottom:0; width:1px; background:var(--line);
+}
+.scenario-detail .steps li:last-child::after{display:none;}
+.reflist-label{font-size:11px; font-weight:700; color:var(--ink-faint); letter-spacing:1px; text-transform:uppercase; margin:6px 0 8px;}
+.ref-chip-list{display:flex; flex-direction:column; gap:7px;}
+.ref-chip{
+  display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:10px;
+  background:var(--surface2); border:1px solid var(--line); cursor:pointer; font-size:12.5px;
+}
+.ref-chip .n{font-family:ui-monospace,monospace; font-size:11px; color:var(--gold); font-weight:700; flex-shrink:0;}
+.ref-chip .t{color:var(--ink-dim); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.ref-chip .go{color:var(--ink-faint);}
+
+/* ---------- BOTTOM NAV ---------- */
+nav.tabbar{
+  position:fixed; left:0; right:0; bottom:0; z-index:30;
+  display:flex; background:rgba(20,25,34,0.92); backdrop-filter:blur(14px);
+  border-top:1px solid var(--line);
+  padding-bottom:var(--safe-bottom);
+}
+nav.tabbar button{
+  flex:1; background:none; border:none; color:var(--ink-faint);
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  padding:9px 2px 8px; cursor:pointer; font-family:inherit;
+}
+nav.tabbar button .ic{font-size:19px; line-height:1;}
+nav.tabbar button .lb{font-size:10px; font-weight:600; letter-spacing:0.2px;}
+nav.tabbar button.active{color:var(--gold);}
+
+/* small screens */
+@media (max-width:340px){
+  .brand h1{font-size:15px;}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="badge">警</div>
+    <div>
+      <h1>捷警法規快查</h1>
+      <div class="sub">大眾捷運法・社維法・警職法・轄區要點</div>
+    </div>
+  </div>
+  <div class="searchbar" id="searchbar">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input id="searchInput" type="text" inputmode="search" placeholder="輸入關鍵字，如：無票、鬥毆、扣留、爆裂物…" autocomplete="off">
+    <button class="clearbtn" id="clearBtn">✕</button>
+  </div>
+  <div class="lawfilters" id="lawfilters"></div>
+</header>
+
+<main id="mainScroll">
+
+  <!-- SEARCH / HOME VIEW -->
+  <section class="view" id="view-search">
+    <div id="searchResultsWrap"></div>
+  </section>
+
+  <!-- SCENARIO VIEW -->
+  <section class="view" id="view-scenario">
+    <div class="section-label">常見執勤情境　點選查看處置步驟</div>
+    <div class="scenario-grid" id="scenarioGrid"></div>
+  </section>
+
+  <!-- BROWSE VIEW -->
+  <section class="view" id="view-browse">
+    <div class="section-label">依法規瀏覽</div>
+    <div id="lawGroups"></div>
+  </section>
+
+  <!-- FAVORITES VIEW -->
+  <section class="view" id="view-fav">
+    <div class="section-label">收藏條文</div>
+    <div id="favList"></div>
+  </section>
+
+</main>
+
+<nav class="tabbar">
+  <button data-view="search" class="active"><span class="ic">🔍</span><span class="lb">搜尋</span></button>
+  <button data-view="scenario"><span class="ic">⚡</span><span class="lb">情境快答</span></button>
+  <button data-view="browse"><span class="ic">📚</span><span class="lb">法規瀏覽</span></button>
+  <button data-view="fav"><span class="ic">⭐</span><span class="lb">收藏</span></button>
+</nav>
+
+<div class="sheet-backdrop" id="backdrop"></div>
+<div class="sheet" id="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <div class="htext">
+      <div class="sheet-lawname" id="sheetLawname"></div>
+      <div class="sheet-title" id="sheetTitle"></div>
+    </div>
+    <button class="favbtn" id="sheetFavBtn">☆</button>
+    <button class="sheet-close" id="sheetClose">✕</button>
+  </div>
+  <div class="sheet-body" id="sheetBody"></div>
+</div>
+
+<script id="lawdata" type="application/json">[{"law": "大眾捷運法", "chapter": "第 一 章 總則", "num": "1", "title": "第 1 條", "content": "為加強都市運輸效能，改善生活環境，促進大眾捷運系統健全發展，以增進公共福利，特制定本法。", "id": 0}, {"law": "大眾捷運法", "chapter": "第 一 章 總則", "num": "2", "title": "第 2 條", "content": "大眾捷運系統之規劃、建設、營運、監督及安全，依本法之規定；本法未規定者，適用其他法律之規定。", "id": 1}, {"law": "大眾捷運法", "chapter": "第 一 章 總則", "num": "3", "title": "第 3 條", "content": "本法所稱大眾捷運系統，指利用地面、地下或高架設施，使用專用動力車輛，行駛於導引之路線，並以密集班次、大量快速輸送都市及鄰近地區旅客之公共運輸系統。\n前項大眾捷運系統，依使用路權型態，分為下列二類：\n一、完全獨立專用路權：全部路線為獨立專用，不受其他地面交通干擾。\n二、非完全獨立專用路權：部分地面路線以實體設施與其他地面運具區隔，僅在路口、道路空間不足或其他特殊情形時，不設區隔設施，而與其他地面運具共用車道。\n大眾捷運系統為非完全獨立專用路權者，其共用車道路線長度，以不超過全部路線長度四分之一為限。但有特殊情形，經中央主管機關報請行政院核准者，不在此限。\n第二項第二款之大眾捷運系統，應考量路口行車安全、行人與車行交通狀況、路口號誌等因素，設置優先通行或聲光號誌。", "id": 2}, {"law": "大眾捷運法", "chapter": "第 一 章 總則", "num": "4", "title": "第 4 條", "content": "大眾捷運系統主管機關：在中央為交通部；在直轄市為直轄市政府；在縣（市）為縣（市）政府。\n路網跨越不相隸屬之行政區域者，由各有關直轄市、縣（市）政府協議決定地方主管機關，協議不成者，由交通部指定之。", "id": 3}, {"law": "大眾捷運法", "chapter": "第 一 章 總則", "num": "5", "title": "第 5 條", "content": "建設大眾捷運系統所需經費及各級政府分擔比例，應依第十二條第一項規定納入規劃報告書財務計畫中，由中央主管機關報請或核轉行政院核定。\n前項建設由民間辦理者，除其他法令另有規定外，所需資金應自行籌措。", "id": 4}, {"law": "大眾捷運法", "chapter": "第 一 章 總則", "num": "6", "title": "第 6 條", "content": "大眾捷運系統需用之土地，得依法徵收或撥用之。", "id": 5}, {"law": "大眾捷運法", "chapter": "第 一 章 總則", "num": "7", "title": "第 7 條", "content": "為有效利用土地資源，促進地區發展，主管機關得辦理大眾捷運系統路線、場、站土地及其毗鄰地區土地之開發。（詳細開發程序略，詳見全國法規資料庫）", "id": 6}, {"law": "大眾捷運法", "chapter": "第 一 章 總則", "num": "7-1", "title": "第 7-1 條", "content": "主管機關為辦理前條第一項之土地開發，得設置土地開發基金。", "id": 7}, {"law": "大眾捷運法", "chapter": "第 一 章 總則", "num": "8", "title": "第 8 條", "content": "為謀大眾捷運系統通信便利，大眾捷運系統工程建設或營運機構，經交通部核准，得設置大眾捷運系統專用電信。", "id": 8}, {"law": "大眾捷運法", "chapter": "第 一 章 總則", "num": "9", "title": "第 9 條", "content": "各級主管機關為促進大眾捷運系統之發展，得設協調委員會，負責規劃、建設及營運之協調事項。", "id": 9}, {"law": "大眾捷運法", "chapter": "第 二 章 規劃", "num": "10", "title": "第 10 條", "content": "大眾捷運系統之規劃，由主管機關或民間辦理。辦理大眾捷運系統規劃時，主管機關或民間應召開公聽會，公開徵求意見。", "id": 10}, {"law": "大眾捷運法", "chapter": "第 二 章 規劃", "num": "11", "title": "第 11 條", "content": "大眾捷運系統之規劃，應考慮地理條件、人口分布、環境永續及淨零減碳目標、土地之利用計畫及其發展、社會及經濟活動、都市運輸發展趨勢、運輸系統之整合發展、採用非完全獨立專用路權路段所經鄰近道路之交通衝擊等因素。", "id": 11}, {"law": "大眾捷運法", "chapter": "第 二 章 規劃", "num": "12", "title": "第 12 條", "content": "大眾捷運系統規劃報告書，應由中央主管機關報請或核轉行政院核定；其內容應包含規劃目的及目標年、運量分析及預測、工程標準及技術可行性、經濟效益及財務評估、路網及場站規劃、興建優先次序、財務計畫、環境影響評估、土地取得方式及可行性評估、公聽會辦理情形等事項。", "id": 12}, {"law": "大眾捷運法", "chapter": "第 三 章 建設", "num": "13", "title": "第 13 條", "content": "大眾捷運系統之建設，由中央主管機關辦理。但經中央主管機關報請行政院同意後，得由地方主管機關辦理。中央或地方主管機關為建設大眾捷運系統，得設立工程建設機構。", "id": 13}, {"law": "大眾捷運法", "chapter": "第 三 章 建設", "num": "13-1", "title": "第 13-1 條", "content": "大眾捷運系統及其附屬設施之公共工程，其設計、監造業務，應由依法登記執業之相關專業技師簽證。", "id": 14}, {"law": "大眾捷運法", "chapter": "第 三 章 建設", "num": "14", "title": "第 14 條", "content": "地方主管機關建設之大眾捷運系統，應由地方主管機關備具規劃報告書、初步工程設計圖說、財源籌措計畫書、工程實施計畫書、營運機構設立計畫及營運計畫書、營運損益估計表等文書，報請中央主管機關核定後辦理。", "id": 15}, {"law": "大眾捷運法", "chapter": "第 三 章 建設", "num": "15", "title": "第 15 條", "content": "大眾捷運系統建設，其開工及竣工期限，應報請中央主管機關核定。路網全部或一部工程完竣，應報請中央主管機關履勘；非經核准，不得營運。", "id": 16}, {"law": "大眾捷運法", "chapter": "第 三 章 建設", "num": "16", "title": "第 16 條", "content": "大眾捷運系統路線穿越河川，其築墩架橋或開闢隧道，應與水利設施配合。", "id": 17}, {"law": "大眾捷運法", "chapter": "第 三 章 建設", "num": "17", "title": "第 17 條", "content": "大眾捷運系統建設工程之施工，主管機關應協同管、線、下水道及其他公共設施之有關主管機關，同時配合進行。", "id": 18}, {"law": "大眾捷運法", "chapter": "第 三 章 建設", "num": "18", "title": "第 18 條", "content": "大眾捷運系統工程建設機構因施工需要，得使用河川、溝渠、涵洞、堤防、道路、公園及其他公共使用之土地。但應事先通知各有關主管機關。", "id": 19}, {"law": "大眾捷運法", "chapter": "第 三 章 建設", "num": "19", "title": "第 19 條", "content": "大眾捷運系統因工程上之必要，得穿越公、私有土地及其土地改良物之上空或地下，並應支付相當之補償。", "id": 20}, {"law": "大眾捷運法", "chapter": "第 三 章 建設", "num": "20", "title": "第 20 條", "content": "因舖設大眾捷運系統地下軌道或其他地下設備，致土地所有人無法附建防空避難設備或法定停車空間時，得予補償或替代。", "id": 21}, {"law": "大眾捷運法", "chapter": "第 三 章 建設", "num": "21", "title": "第 21 條", "content": "大眾捷運系統工程建設機構為勘測、施工或維護大眾捷運系統路線及其設施，應於七天前通知所有人、占有人或使用人後始得進入或使用公、私土地或建築物。但情況緊急，遲延即有發生重大公共危險之虞者，得先行進入或使用。依但書規定進入或使用私有土地或建築物時，應會同當地村、里長或警察到場見證。", "id": 22}, {"law": "大眾捷運法", "chapter": "第 三 章 建設", "num": "22", "title": "第 22 條", "content": "大眾捷運系統工程建設機構依前條使用公、私土地或建築物，有拆除建築物或其他工作物全部或一部之必要時，應先報請當地主管機關限期令所有人、占有人或使用人拆除之。", "id": 23}, {"law": "大眾捷運法", "chapter": "第 三 章 建設", "num": "23", "title": "第 23 條", "content": "大眾捷運系統所需電能，由電業機構優先供應。", "id": 24}, {"law": "大眾捷運法", "chapter": "第 三 章 建設", "num": "24", "title": "第 24 條", "content": "於大眾捷運系統設施附掛管、線，應協調該工程建設機構同意後，始得施工。", "id": 25}, {"law": "大眾捷運法", "chapter": "第 三 章 建設", "num": "24-1", "title": "第 24-1 條", "content": "大眾捷運系統在市區道路或公路建設，應先徵得該市區道路或公路主管機關同意。", "id": 26}, {"law": "大眾捷運法", "chapter": "第 三 章 建設", "num": "24-2", "title": "第 24-2 條", "content": "大眾捷運系統建設及車輛製造之技術規範，由中央主管機關定之，應包含無障礙設備及設施之設置與維護方式。", "id": 27}, {"law": "大眾捷運法", "chapter": "第 四 章 營運", "num": "25", "title": "第 25 條", "content": "中央主管機關建設之大眾捷運系統，由中央主管機關指定地方主管機關設立營運機構或經甄選後許可民間投資籌設營運機構營運。地方主管機關建設者，由地方主管機關設立營運機構或經甄選後許可民間投資籌設營運機構營運。", "id": 28}, {"law": "大眾捷運法", "chapter": "第 四 章 營運", "num": "26", "title": "第 26 條", "content": "前條大眾捷運系統營運機構，以依公司法設立之股份有限公司為限。", "id": 29}, {"law": "大眾捷運法", "chapter": "第 四 章 營運", "num": "27", "title": "第 27 條", "content": "大眾捷運系統之營運，應以企業方式經營，旅客運價一律全票收費。如法令另有規定予以優待者，應由其主管機關編列預算補貼之。", "id": 30}, {"law": "大眾捷運法", "chapter": "第 四 章 營運", "num": "28", "title": "第 28 條", "content": "大眾捷運系統營運機構應擬訂服務指標，提供安全、快速、舒適之服務，以及便於身心障礙者行動與使用之無障礙運輸服務。", "id": 31}, {"law": "大眾捷運法", "chapter": "第 四 章 營運", "num": "29", "title": "第 29 條", "content": "大眾捷運系統運價率之計算公式，由中央主管機關擬訂，報請行政院核定；變更時亦同。大眾捷運系統之運價，由其營運機構依運價率計算公式擬訂，報請地方主管機關核定後公告實施；變更時亦同。", "id": 32}, {"law": "大眾捷運法", "chapter": "第 四 章 營運", "num": "30", "title": "第 30 條", "content": "大眾捷運系統設施之操作及修護，應由依法經技能檢定合格之技術人員擔任之。", "id": 33}, {"law": "大眾捷運法", "chapter": "第 四 章 營運", "num": "31", "title": "第 31 條", "content": "為發揮大眾捷運系統與公路運輸系統之整合功能，於大眾捷運系統營運前及營運期間，地方主管機關應會商當地公路主管機關重新調整公路汽車客運業或市區汽車客運業營運路線。", "id": 34}, {"law": "大眾捷運法", "chapter": "第 四 章 營運", "num": "32", "title": "第 32 條", "content": "為公益上之必要，大眾捷運系統地方主管機關，得核准或責令大眾捷運系統營運機構與市區汽車客運業或其他大眾運輸業者，共同辦理聯運或其他路線、票證、票價等整合業務。", "id": 35}, {"law": "大眾捷運法", "chapter": "第 四 章 營運", "num": "32-2", "title": "第 32-2 條", "content": "大眾捷運系統營運機構得於站區內提供免費充電設施服務，以供旅客緊急需要使用。", "id": 36}, {"law": "大眾捷運法", "chapter": "第 四 章 營運", "num": "33", "title": "第 33 條", "content": "大眾捷運系統營運機構為維修路線場、站或搶救災害，得適用第十八條、第二十一條、第二十二條之規定。", "id": 37}, {"law": "大眾捷運法", "chapter": "第 五 章 監督", "num": "34", "title": "第 34 條", "content": "大眾捷運系統之經營、維護與安全應受主管機關監督；監督實施辦法，由中央主管機關定之。", "id": 38}, {"law": "大眾捷運法", "chapter": "第 五 章 監督", "num": "35", "title": "第 35 條", "content": "大眾捷運系統營運機構，應依規定報請地方主管機關核轉中央主管機關備查營運狀況及營業盈虧等資料。中央主管機關得派員不定期視察大眾捷運系統營運狀況。", "id": 39}, {"law": "大眾捷運法", "chapter": "第 五 章 監督", "num": "36", "title": "第 36 條", "content": "大眾捷運系統運輸上必要之設備，主管機關得派員檢查；設備不適當時，應通知其限期改正。", "id": 40}, {"law": "大眾捷運法", "chapter": "第 五 章 監督", "num": "37", "title": "第 37 條", "content": "大眾捷運系統營運機構，得經地方主管機關核准兼營其他附屬事業。", "id": 41}, {"law": "大眾捷運法", "chapter": "第 五 章 監督", "num": "38", "title": "第 38 條", "content": "大眾捷運系統營運機構增減資本、租借營業、抵押財產或移轉管理，應先經地方主管機關核准，並報請中央主管機關備查。營運機構全部或部分宣告停業或終止營業者，應報經地方主管機關核轉中央主管機關核准。營運機構如有經營不善或其他有損公共利益之重大情事者，主管機關應命其限期改善，屆期仍未改善或改善無效者，停止其營運之一部或全部。", "id": 42}, {"law": "大眾捷運法", "chapter": "第 五 章 監督", "num": "39", "title": "第 39 條", "content": "大眾捷運系統營運機構，遇有重大行車事故，應立即通報地方及中央主管機關，並隨時將經過及處理情形報請查核；其屬一般行車事故及異常事件，亦應按月彙報。營運機構應就行車事故及異常事件訂定應變計畫，依應變計畫定期實施演練，並檢討改善。", "id": 43}, {"law": "大眾捷運法", "chapter": "第 六 章 安全", "num": "40", "title": "第 40 條", "content": "大眾捷運系統地方主管機關，為防護大眾捷運系統路線、維持場、站及行車秩序、保障旅客安全，應由其警察機關置專業交通警察，執行職務時並受該地方主管機關之指揮、監督。\n大眾捷運系統採用非完全獨立專用路權，涉共用現有道路之車道部分，其道路交通之管理，依道路交通管理處罰條例及其相關法規辦理。", "id": 44}, {"law": "大眾捷運法", "chapter": "第 六 章 安全", "num": "41", "title": "第 41 條", "content": "大眾捷運系統營運機構，對行車及路線、場、站設施，應妥善管理維護，並應有緊急逃生之設施，以確保旅客安全。其車輛機具之檢查、養護並應嚴格遵守法令之規定。\n大眾捷運系統採用完全獨立專用路權且為無人駕駛系統者，大眾捷運系統營運機構應設異物入侵軌道之預警及緊急應變設備或措施。\n大眾捷運系統設施及其運作有採取特別安全防護措施之必要者，應由大眾捷運系統營運機構，報請地方主管機關核定之。", "id": 45}, {"law": "大眾捷運法", "chapter": "第 六 章 安全", "num": "42", "title": "第 42 條", "content": "大眾捷運系統營運機構，對行車人員，應予有效之訓練與管理，使其確切瞭解並嚴格執行法令之規定；對其技能、體格及精神狀況，應施行定期檢查及臨時檢查，經檢查不合標準者，應暫停或調整其職務。", "id": 46}, {"law": "大眾捷運法", "chapter": "第 六 章 安全", "num": "43", "title": "第 43 條", "content": "大眾捷運系統營運機構，對行車事故及異常事件，應蒐集資料調查研究，分析原因，並採取預防及改進措施，地方主管機關得予查驗。", "id": 47}, {"law": "大眾捷運法", "chapter": "第 六 章 安全", "num": "43-1", "title": "第 43-1 條", "content": "地方主管機關應就大眾捷運系統運轉中發生之行車事故及異常事件進行檢討。地方主管機關對檢討或調查結果，認有應改進事項者，應命大眾捷運系統營運機構限期改善，並列管追蹤；其違失事項涉及違反本法規定者，依法裁處。", "id": 48}, {"law": "大眾捷運法", "chapter": "第 六 章 安全", "num": "44", "title": "第 44 條", "content": "大眾捷運系統營運機構，應於適當處所標示安全規定，旅客乘車時應遵守站車人員之指導。\n非大眾捷運系統之車輛或人員不得進入大眾捷運系統之路線、橋樑、隧道、涵管內及站區內非供公眾通行之處所。但屬非完全獨立專用路權之大眾捷運系統，其與其他運具共用車道部分，依第四十條第二項規定辦理。\n採完全獨立專用路權之大眾捷運系統路線，除天橋及地下道外，不得跨越。", "id": 49}, {"law": "大眾捷運法", "chapter": "第 六 章 安全", "num": "45", "title": "第 45 條", "content": "為興建或維護大眾捷運系統設施及行車安全，主管機關於規劃路線經行政院核定後，應會同當地直轄市或縣（市）主管機關，於大眾捷運系統兩側勘定範圍，公告禁建或限建範圍，不受相關土地使用管制法令規定之限制。", "id": 50}, {"law": "大眾捷運法", "chapter": "第 六 章 安全", "num": "45-1", "title": "第 45-1 條", "content": "禁建範圍內除建造其他捷運設施或連通設施或開發建築物外，不得為建築物之建造、工程設施之構築、廣告物之設置、障礙物之堆置、土地開挖行為及其他足以妨礙大眾捷運系統設施或行車安全之工程行為。", "id": 51}, {"law": "大眾捷運法", "chapter": "第 六 章 安全", "num": "45-2", "title": "第 45-2 條", "content": "限建範圍公告後，於限建範圍內為建築物之建造等行為，申請建築執照或許可時，應檢附該管主管機關及主管機關規定之文件，由該管主管機關會同主管機關審核。", "id": 52}, {"law": "大眾捷運法", "chapter": "第 六 章 安全", "num": "45-3", "title": "第 45-3 條", "content": "禁建、限建範圍之劃定、公告、變更、禁止行為、拆除補償程序等相關事項之辦法，由交通部會同內政部定之。", "id": 53}, {"law": "大眾捷運法", "chapter": "第 六 章 安全", "num": "46", "title": "第 46 條", "content": "大眾捷運系統營運機構，因行車及其他事故致旅客死亡或傷害，或財物毀損喪失時，應負損害賠償責任。\n前項事故之發生，非因大眾捷運系統營運機構之過失者，對於非旅客之被害人死亡或傷害，仍應酌給卹金或醫療補助費。但事故之發生係出於被害人之故意行為者，不予給付。", "id": 54}, {"law": "大眾捷運法", "chapter": "第 六 章 安全", "num": "47", "title": "第 47 條", "content": "大眾捷運系統旅客之運送，應依中央主管機關指定金額投保責任保險，其投保金額，得另以提存保證金支付之。", "id": 55}, {"law": "大眾捷運法", "chapter": "第 七 章 罰則", "num": "48", "title": "第 48 條", "content": "擅自占用或破壞大眾捷運系統用地、車輛或其他設施者，除涉及刑責應依法移送偵辦外，該大眾捷運系統工程建設或營運機構，應通知行為人或其雇用人負責回復原狀，或償還修復費用，或依法賠償。", "id": 56}, {"law": "大眾捷運法", "chapter": "第 七 章 罰則", "num": "48-1", "title": "第 48-1 條", "content": "以竊取、毀壞或其他非法方法危害重要大眾捷運系統營運機構站、場、設施或設備之功能正常運作者，處一年以上七年以下有期徒刑，得併科新臺幣一千萬元以下罰金。\n意圖危害國家安全或社會安定，而犯前項之罪者，處三年以上十年以下有期徒刑，得併科新臺幣五千萬元以下罰金。\n前二項情形致釀成災害者，加重其刑至二分之一；因而致人於死者，處無期徒刑或七年以上有期徒刑，得併科新臺幣一億元以下罰金；致重傷者，處五年以上十二年以下有期徒刑，得併科新臺幣八千萬元以下罰金。\n第一項及第二項之未遂犯罰之。", "id": 57}, {"law": "大眾捷運法", "chapter": "第 七 章 罰則", "num": "48-2", "title": "第 48-2 條", "content": "對於重要大眾捷運系統營運機構站、場、設施或設備之核心資通系統，以無故輸入帳號密碼、破解保護措施、利用系統漏洞入侵、以電腦程式干擾、或無故取得刪除變更電磁紀錄等方法，危害其功能正常運作者，處一年以上七年以下有期徒刑，得併科新臺幣一千萬元以下罰金。\n製作專供犯前項之罪之電腦程式，而供自己或他人犯前項之罪者，亦同。\n意圖危害國家安全或社會安定，而犯前二項之罪者，處三年以上十年以下有期徒刑，得併科新臺幣五千萬元以下罰金。\n前三項情形致釀成災害者，加重其刑至二分之一；因而致人於死者，處無期徒刑或七年以上有期徒刑，得併科新臺幣一億元以下罰金；致重傷者，處五年以上十二年以下有期徒刑，得併科新臺幣八千萬元以下罰金。\n第一項至第三項之未遂犯罰之。", "id": 58}, {"law": "大眾捷運法", "chapter": "第 七 章 罰則", "num": "49", "title": "第 49 條", "content": "旅客無票、持用失效車票或冒用不符身分之車票乘車者，除補繳票價外，並支付票價五十倍之違約金。\n前項應補繳票價及支付之違約金，如旅客不能證明其起站地點者，以營運機構公告之單程票最高票價計算。", "id": 59}, {"law": "大眾捷運法", "chapter": "第 七 章 罰則", "num": "50", "title": "第 50 條", "content": "有下列情形之一者，處行為人或駕駛人新臺幣一千五百元以上七千五百元以下罰鍰：\n一、車輛行駛中，攀登、跳車或攀附隨行。\n二、妨礙車門、月台門關閉或擅自開啟。\n三、非大眾捷運系統之車輛或人員，違反第四十四條第二項前段規定，進入大眾捷運系統之路線、橋樑、隧道、涵管內及站區內非供公眾通行之處所。\n四、未經驗票程序、不按規定處所或方式出入車站或上下車。\n五、拒絕大眾捷運系統站、車人員查票或妨害其執行職務。\n六、滯留於不提供載客服務之車廂，不聽勸止。\n七、未經許可在車上或站區內募捐、散發或張貼宣傳品、銷售物品或為其他商業行為。\n八、未經許可攜帶動物進入站區或車輛內。\n九、於大眾捷運系統禁止飲食區內飲食，嚼食口香糖或檳榔，或隨地吐痰、檳榔汁、檳榔渣，拋棄紙屑、菸蒂、口香糖、瓜果或其皮、核、汁、渣或其他一般廢棄物。\n十、滯留於車站出入口、驗票閘門、售票機、電扶梯或其他通道，致妨礙旅客通行或使用，不聽勸離。\n十一、非為乘車而在車站之旅客大廳、穿堂層或月台層區域內遊蕩，致妨礙旅客通行或使用，不聽勸離。\n十二、躺臥於車廂內或月台上之座椅，不聽勸阻。\n十三、未經許可在捷運系統路權範圍內設攤、搭棚架或擺設筵席。\n十四、於月台上嬉戲、跨越黃色警戒線，或於電扶梯上不按遵行方向行走或奔跑，或為其他影響作業秩序及行車安全之行為，不聽勸止。\n有前項各款情事之一者，大眾捷運系統站、車人員得視情節會同警察人員強制其離開站、車或大眾捷運系統區域，其未乘車區間之票款，不予退還。", "id": 60}, {"law": "大眾捷運法", "chapter": "第 七 章 罰則", "num": "50-1", "title": "第 50-1 條", "content": "有下列情形之一者，處新臺幣一萬元以上一百萬元以下罰鍰：\n一、未經許可攜帶經公告之危險或易燃物進入大眾捷運系統路線、場、站或車輛內。\n二、任意操控站、車設備或妨礙行車、電力或安全系統設備正常運作。\n三、違反第四十四條第三項規定，未經天橋或地下道，跨越完全獨立專用路權之大眾捷運系統路線。\n有前項情形之一者，適用前條第二項規定。\n未滿十四歲之人，因其法定代理人或監護人監督不周，致違反第一項規定時，處罰其法定代理人或監護人。", "id": 61}, {"law": "大眾捷運法", "chapter": "第 七 章 罰則", "num": "51", "title": "第 51 條", "content": "大眾捷運系統營運機構有下列情形之一者，處新臺幣十萬元以上五十萬元以下罰鍰：僱用未經技能檢定合格之技術人員擔任設施操作修護、經通知改善而未改善、應報告而未報告、規避妨礙或拒絕檢閱文件帳冊、未經核准兼營附屬事業、未依規定對行車人員施予訓練與管理致發生行車事故、未於適當處所標示安全規定、未依規定投保責任保險或提存保證金等。經通知限期改正或改善，屆期未改正或改善者，按次處罰；情節重大者，並得停止其營運之一部或全部或廢止其營運許可。", "id": 62}, {"law": "大眾捷運法", "chapter": "第 七 章 罰則", "num": "51-1", "title": "第 51-1 條", "content": "大眾捷運系統營運機構有下列情形之一者，處新臺幣五十萬元以上二百五十萬元以下罰鍰：一、未經履勘核准而營運。二、未經核定或未依公告實施運價。三、非因不可抗力而停止營運。", "id": 63}, {"law": "大眾捷運法", "chapter": "第 七 章 罰則", "num": "52", "title": "第 52 條", "content": "本法所定之罰鍰，由地方主管機關處罰。第五十條第一項或第五十條之一規定之處罰，地方主管機關得委託大眾捷運系統營運機構為之。", "id": 64}, {"law": "大眾捷運法", "chapter": "第 八 章 附則", "num": "53", "title": "第 53 條", "content": "大眾捷運系統旅客運送、行車安全、修建養護、車輛機具檢修、行車人員技能體格檢查規則及附屬事業經營管理辦法，由營運之地方主管機關擬訂，報請中央主管機關核定。", "id": 65}, {"law": "大眾捷運法", "chapter": "第 八 章 附則", "num": "54", "title": "第 54 條", "content": "本法自公布日施行。", "id": 66}, {"law": "社會秩序維護法", "chapter": "第 一 章 法例", "num": "1", "title": "第 1 條", "content": "為維護公共秩序，確保社會安寧，特制定本法。", "id": 67}, {"law": "社會秩序維護法", "chapter": "第 一 章 法例", "num": "2", "title": "第 2 條", "content": "違反社會秩序行為之處罰，以行為時本法有明文規定者為限。", "id": 68}, {"law": "社會秩序維護法", "chapter": "第 一 章 法例", "num": "3", "title": "第 3 條", "content": "行為後本法有變更者，適用裁處時之規定。但裁處前之規定有利於行為人者，適用最有利於行為人之規定。", "id": 69}, {"law": "社會秩序維護法", "chapter": "第 一 章 法例", "num": "4", "title": "第 4 條", "content": "在中華民國領域內違反本法者，適用本法。在中華民國領域外之中華民國船艦或航空器內違反本法者，以在中華民國領域內違反論。", "id": 70}, {"law": "社會秩序維護法", "chapter": "第 一 章 法例", "num": "5", "title": "第 5 條", "content": "稱以上、以下、以內者，俱連本數計算。", "id": 71}, {"law": "社會秩序維護法", "chapter": "第 一 章 法例", "num": "6", "title": "第 6 條", "content": "本法規定之解散命令、檢查命令、禁止或勸阻，應以書面為之。但情況緊急時，得以口頭為之。", "id": 72}, {"law": "社會秩序維護法", "chapter": "第 二 章 責任", "num": "7", "title": "第 7 條", "content": "違反本法行為，不問出於故意或過失，均應處罰。但出於過失者，不得罰以拘留，並得減輕之。", "id": 73}, {"law": "社會秩序維護法", "chapter": "第 二 章 責任", "num": "8", "title": "第 8 條", "content": "未滿十四歲人、心神喪失人之行為，不罰。未滿十四歲人有違反本法之行為者，得責由其法定代理人或其他相當之人加以管教；無人管教時，得送交少年或兒童福利機構收容。心神喪失人有違反本法之行為者，得責由其監護人加以監護；無人監護或不能監護時，得送交療養處所監護或治療。", "id": 74}, {"law": "社會秩序維護法", "chapter": "第 二 章 責任", "num": "9", "title": "第 9 條", "content": "十四歲以上未滿十八歲人、滿七十歲人、精神耗弱或未滿七歲即有聽覺且語言障礙者之行為，得減輕處罰。", "id": 75}, {"law": "社會秩序維護法", "chapter": "第 二 章 責任", "num": "10", "title": "第 10 條", "content": "未滿十八歲人，心神喪失人或精神耗弱人，因其法定代理人或監護人疏於管教或監護，致有違反本法之行為者，除依前兩條規定處理外，按其違反本法之行為處罰其法定代理人或監護人。但其處罰以罰鍰或申誡為限。", "id": 76}, {"law": "社會秩序維護法", "chapter": "第 二 章 責任", "num": "11", "title": "第 11 條", "content": "依法令之行為，不罰。", "id": 77}, {"law": "社會秩序維護法", "chapter": "第 二 章 責任", "num": "12", "title": "第 12 條", "content": "對於現在不法之侵害，而出於防衛自己或他人權利之行為，不罰。", "id": 78}, {"law": "社會秩序維護法", "chapter": "第 二 章 責任", "num": "13", "title": "第 13 條", "content": "因避免自己或他人之緊急危難，而出於不得已之行為，不罰。", "id": 79}, {"law": "社會秩序維護法", "chapter": "第 二 章 責任", "num": "14", "title": "第 14 條", "content": "因不可抗力之行為，不罰。", "id": 80}, {"law": "社會秩序維護法", "chapter": "第 二 章 責任", "num": "15", "title": "第 15 條", "content": "二人以上，共同實施違反本法之行為者，分別處罰。其利用他人實施者，依其所利用之行為處罰之。", "id": 81}, {"law": "社會秩序維護法", "chapter": "第 二 章 責任", "num": "16", "title": "第 16 條", "content": "教唆他人實施違反本法之行為者，依其所教唆之行為處罰。", "id": 82}, {"law": "社會秩序維護法", "chapter": "第 二 章 責任", "num": "17", "title": "第 17 條", "content": "幫助他人實施違反本法之行為者，得減輕處罰。", "id": 83}, {"law": "社會秩序維護法", "chapter": "第 二 章 責任", "num": "18", "title": "第 18 條", "content": "經營特種工商業者之代表、受雇人或其他從業人員關於業務上違反本法之行為，得併罰其營業負責人。", "id": 84}, {"law": "社會秩序維護法", "chapter": "第 二 章 責任", "num": "18-1", "title": "第 18-1 條", "content": "公司、有限合夥或商業之負責人、代表人、受雇人或其他從業人員，因執行業務而犯刑法妨害風化罪、妨害自由罪、妨害秘密罪，或犯人口販運防制法、通訊保障及監察法之罪，經判決有期徒刑以上之刑者，得處該公司、有限合夥或商業勒令歇業。", "id": 85}, {"law": "社會秩序維護法", "chapter": "第 三 章 處罰", "num": "19", "title": "第 19 條", "content": "處罰之種類如左：一、拘留：一日以上，三日以下；遇有依法加重時，合計不得逾五日。二、勒令歇業。三、停止營業：一日以上，二十日以下。四、罰鍰：新臺幣三百元以上，三萬元以下；遇有依法加重時，合計不得逾新臺幣六萬元。五、沒入。六、申誡：以書面或言詞為之。勒令歇業或停止營業之裁處，應符合比例原則。", "id": 86}, {"law": "社會秩序維護法", "chapter": "第 三 章 處罰", "num": "20", "title": "第 20 條", "content": "罰鍰應於裁處確定之翌日起十日內完納。被處罰人依其經濟狀況不能即時完納者，得准許其於三個月內分期完納。", "id": 87}, {"law": "社會秩序維護法", "chapter": "第 三 章 處罰", "num": "22", "title": "第 22 條", "content": "因違反本法行為所生或所得之物、查禁物，應沒入之。供違反本法行為所用之物，以行為人所有者為限，得沒入之。但沒入，應符合比例原則。", "id": 88}, {"law": "社會秩序維護法", "chapter": "第 三 章 處罰", "num": "23", "title": "第 23 條", "content": "沒入，與其他處罰併宣告之。但有免除其他處罰、行為人逃逸、查禁物等情形之一者，得單獨宣告沒入。", "id": 89}, {"law": "社會秩序維護法", "chapter": "第 三 章 處罰", "num": "24", "title": "第 24 條", "content": "違反本法之數行為，分別處罰。但於警察機關通知單送達或逕行通知前，違反同條款之規定者，以一行為論，並得加重其處罰。一行為而發生二以上之結果者，從一重處罰；其違反同條款之規定者，從重處罰。", "id": 90}, {"law": "社會秩序維護法", "chapter": "第 三 章 處罰", "num": "25", "title": "第 25 條", "content": "違反本法之數行為，分別裁處並分別執行，但執行前之數確定裁處，依規定合併執行之（拘留合計不逾五日、罰鍰合計不逾新臺幣六萬元等）。", "id": 91}, {"law": "社會秩序維護法", "chapter": "第 三 章 處罰", "num": "26", "title": "第 26 條", "content": "經依本法處罰執行完畢，三個月內再有違反本法行為者，得加重處罰。", "id": 92}, {"law": "社會秩序維護法", "chapter": "第 三 章 處罰", "num": "27", "title": "第 27 條", "content": "違反本法之行為人，於其行為未被發覺以前自首而受裁處者，減輕或免除其處罰。", "id": 93}, {"law": "社會秩序維護法", "chapter": "第 三 章 處罰", "num": "28", "title": "第 28 條", "content": "違反本法之案件，量罰時應審酌一切情狀，尤應注意違反之動機目的、所受之刺激、手段、行為人之生活狀況與品行與智識程度、與被害人之關係、違反義務之程度、所生之危險或損害、行為後之態度等事項，為量罰輕重之標準。", "id": 94}, {"law": "社會秩序維護法", "chapter": "第 三 章 處罰", "num": "29", "title": "第 29 條", "content": "違反本法行為之情節可憫恕者，得減輕或免除其處罰。依法令加重或減輕者，仍得依前項之規定，減輕其處罰。", "id": 95}, {"law": "社會秩序維護法", "chapter": "第 三 章 處罰", "num": "30", "title": "第 30 條", "content": "本法處罰之加重或減輕標準：拘留或罰鍰之加重或減輕，得加至或減至本罰之二分之一。", "id": 96}, {"law": "社會秩序維護法", "chapter": "第 四 章 時效", "num": "31", "title": "第 31 條", "content": "違反本法行為，逾二個月者，警察機關不得訊問、處罰，並不得移送法院。前項期間，自違反本法行為成立之日起算。但其行為有連續或繼續之狀態者，自行為終了之日起算。", "id": 97}, {"law": "社會秩序維護法", "chapter": "第 四 章 時效", "num": "32", "title": "第 32 條", "content": "違反本法行為之處罰，其為停止營業、沒入、申誡者，自裁處確定之日起，逾三個月未執行者，免予執行；為罰鍰者，自裁處確定之日起，逾三個月未移送行政執行者，免予移送；為拘留、勒令歇業者，自裁處確定之日起，逾六個月未執行者，免予執行。", "id": 98}, {"law": "社會秩序維護法", "chapter": "第 一 章 管轄", "num": "33", "title": "第 33 條", "content": "違反本法之案件，由行為地或行為人之住所、居所或所在地之地方法院或其分院或警察機關管轄。", "id": 99}, {"law": "社會秩序維護法", "chapter": "第 一 章 管轄", "num": "35", "title": "第 35 條", "content": "警察局及其分局，就該管區域內之違反本法案件有管轄權。在地域遼闊交通不便地區，得由上級警察機關授權該管警察所、警察分駐所行使其管轄權。專業警察機關，得經內政部核准就該管區域內之違反本法案件行使其管轄權。", "id": 100}, {"law": "社會秩序維護法", "chapter": "第 一 章 管轄", "num": "36", "title": "第 36 條", "content": "地方法院或其分院為處理違反本法案件，視警察轄區及實際需要，分設簡易庭及普通庭。", "id": 101}, {"law": "社會秩序維護法", "chapter": "第 一 章 管轄", "num": "37", "title": "第 37 條", "content": "地方法院或其分院簡易庭（以下簡稱簡易庭），以法官一人獨任行之。地方法院或其分院普通庭（以下簡稱普通庭），以法官三人合議行之。", "id": 102}, {"law": "社會秩序維護法", "chapter": "第 一 章 管轄", "num": "38", "title": "第 38 條", "content": "違反本法之行為，涉嫌違反刑事法律或少年事件處理法者，應移送檢察官或少年法庭依刑事法律或少年事件處理法規定辦理。但其行為應處停止營業、勒令歇業、罰鍰或沒入之部分，仍依本法規定處罰。", "id": 103}, {"law": "社會秩序維護法", "chapter": "第 二 章 調查", "num": "39", "title": "第 39 條", "content": "警察機關因警察人員發現、民眾舉報、行為人自首或其他情形知有違反本法行為之嫌疑者，應即開始調查。", "id": 104}, {"law": "社會秩序維護法", "chapter": "第 二 章 調查", "num": "40", "title": "第 40 條", "content": "可為證據或應予沒入之物，應妥予保管。但在裁處確定後，保管物未經沒入者，予以發還所有人、持有人或保管人；如無所有人、持有人或保管人者，依法處理。", "id": 105}, {"law": "社會秩序維護法", "chapter": "第 二 章 調查", "num": "41", "title": "第 41 條", "content": "警察機關為調查違反本法行為之事實，應通知嫌疑人，並得通知證人或關係人。通知書應載明被通知人姓名等資料、事由、應到之日時處所、無正當理由不到場得逕行裁處之意旨、通知機關署名。訊問嫌疑人，應先告以通知之事由，再訊明姓名、出生年月日、職業、住所或居所，並給予申辯之機會。嫌疑人於審問中或調查中得委任代理人到場。但法院或警察機關認為必要時，仍得命本人到場。", "id": 106}, {"law": "社會秩序維護法", "chapter": "第 二 章 調查", "num": "42", "title": "第 42 條", "content": "對於現行違反本法之行為人，警察人員得即時制止其行為，並得逕行通知到場；其不服通知者，得強制其到場。但確悉其姓名、住所或居所而無逃亡之虞者，得依前條規定辦理。", "id": 107}, {"law": "社會秩序維護法", "chapter": "第 三 章 裁處", "num": "43", "title": "第 43 條", "content": "左列各款案件，警察機關於訊問後，除有繼續調查必要者外，應即作成處分書：一、違反本法行為專處罰鍰或申誡之案件。二、違反本法行為選擇處罰鍰或申誡之案件。三、依第一款、第二款之處分，併宣告沒入者。四、單獨宣告沒入者。五、認為對第一款、第二款之案件應免除處罰者。處分書應載明行為人資料、主文、事實及理由、適用之法條、處分機關及年月日、不服處分者得於送達翌日起五日內以書狀敘述理由聲明異議。", "id": 108}, {"law": "社會秩序維護法", "chapter": "第 三 章 裁處", "num": "44", "title": "第 44 條", "content": "警察機關對於情節輕微而事實明確之違反本法案件，得不經通知、訊問逕行處分。但其處罰以新臺幣一千五百元以下罰鍰或申誡為限。", "id": 109}, {"law": "社會秩序維護法", "chapter": "第 三 章 裁處", "num": "45", "title": "第 45 條", "content": "第四十三條第一項所列各款以外之案件，警察機關於訊問後，應即移送該管簡易庭裁定。前項警察機關移請裁定之案件，該管簡易庭認為不應處罰或以不處拘留、勒令歇業、停止營業為適當者，得逕為不罰或其他處罰之裁定。", "id": 110}, {"law": "社會秩序維護法", "chapter": "第 三 章 裁處", "num": "46", "title": "第 46 條", "content": "法院受理警察機關移送之違反本法案件後，除須審問或調查者外，應迅速制作裁定書。裁定書應載明行為人資料、主文、事實及理由、適用之法條、裁定機關及年月日、不服裁定者得於送達翌日起五日內以書狀敘述理由提起抗告。", "id": 111}, {"law": "社會秩序維護法", "chapter": "第 三 章 裁處", "num": "48", "title": "第 48 條", "content": "警察機關對於違反本法之嫌疑人，經合法通知，無正當理由不到場者，得逕行裁處之。", "id": 112}, {"law": "社會秩序維護法", "chapter": "第 三 章 裁處", "num": "49", "title": "第 49 條", "content": "違反本法案件之裁定書或處分書作成時，受裁定人或受處分人在場者，應宣示或宣告之，並當場交付裁定書或處分書。未經當場宣示或宣告或不經訊問而逕行裁處之案件，其裁定書或處分書，應由警察機關於五日內送達之。", "id": 113}, {"law": "社會秩序維護法", "chapter": "第 四 章 執行", "num": "50", "title": "第 50 條", "content": "處罰之執行，由警察機關為之。罰鍰逾期未完納者，由警察機關依法移送行政執行。", "id": 114}, {"law": "社會秩序維護法", "chapter": "第 四 章 執行", "num": "51", "title": "第 51 條", "content": "違反本法案件之處罰，於裁處確定後執行。", "id": 115}, {"law": "社會秩序維護法", "chapter": "第 四 章 執行", "num": "52", "title": "第 52 條", "content": "裁定拘留確定，經通知執行，無正當理由不到場者，強制其到場。", "id": 116}, {"law": "社會秩序維護法", "chapter": "第 四 章 執行", "num": "53", "title": "第 53 條", "content": "拘留，應在拘留所內執行之。", "id": 117}, {"law": "社會秩序維護法", "chapter": "第 四 章 執行", "num": "54", "title": "第 54 條", "content": "拘留之執行，即時起算，並以二十四小時為一日。前項執行，期滿釋放。但於零時至八時間期滿者，得經本人同意於當日八時釋放之。", "id": 118}, {"law": "社會秩序維護法", "chapter": "第 五 章 救濟", "num": "55", "title": "第 55 條", "content": "被處罰人不服警察機關之處分者，得於處分書送達之翌日起五日內聲明異議。聲明異議，應以書狀敘明理由，經原處分之警察機關向該管簡易庭為之。", "id": 119}, {"law": "社會秩序維護法", "chapter": "第 五 章 救濟", "num": "56", "title": "第 56 條", "content": "原處分之警察機關認為聲明異議有理由者，應撤銷或變更其處分；認為不合法定程式或聲明異議權已經喪失或全部或一部無理由者，應於收受聲明異議書狀之翌日起三日內，送交簡易庭，並得添具意見書。", "id": 120}, {"law": "社會秩序維護法", "chapter": "第 五 章 救濟", "num": "57", "title": "第 57 條", "content": "簡易庭認為聲明異議不合法定程式或聲明異議權已經喪失者，應以裁定駁回之。簡易庭認為聲明異議無理由者，應以裁定駁回之。認為有理由者，以裁定將原處分撤銷或變更之。對於簡易庭關於聲明異議所為之裁定，不得抗告。", "id": 121}, {"law": "社會秩序維護法", "chapter": "第 五 章 救濟", "num": "58", "title": "第 58 條", "content": "受裁定人或原移送之警察機關對於簡易庭就第四十五條移送之案件所為之裁定，有不服者，得向同法院普通庭提起抗告；對於普通庭之裁定，不得再行抗告。", "id": 122}, {"law": "社會秩序維護法", "chapter": "第 五 章 救濟", "num": "59", "title": "第 59 條", "content": "抗告期間為五日，自送達裁定之翌日起算。提起抗告，應以書狀敘述理由提出於簡易庭為之。", "id": 123}, {"law": "社會秩序維護法", "chapter": "第 一 章 妨害安寧秩序", "num": "63", "title": "第 63 條", "content": "有左列各款行為之一者，處三日以下拘留或新臺幣三萬元以下罰鍰：\n一、無正當理由攜帶具有殺傷力之器械、化學製劑或其他危險物品者。\n二、無正當理由鳴槍者。\n三、無正當理由，攜帶用於開啟或破壞門、窗、鎖或其他安全設備之工具者。\n四、放置、投擲或發射有殺傷力之物品而有危害他人身體或財物之虞者。\n五、散佈謠言，足以影響公共之安寧者。\n六、蒙面偽裝或以其他方法驚嚇他人有危害安全之虞者。\n七、關於製造、運輸、販賣、貯存易燃、易爆或其他危險物品之營業，未經主管機關許可；或其營業設備及方法，違反法令規定者。\n八、製造、運輸、販賣、攜帶或公然陳列經主管機關公告查禁之器械者。\n前項第七款、第八款，其情節重大或再次違反者，處或併處停止營業或勒令歇業。", "id": 124}, {"law": "社會秩序維護法", "chapter": "第 一 章 妨害安寧秩序", "num": "64", "title": "第 64 條", "content": "有下列各款行為之一者，處三日以下拘留或新臺幣三萬元以下罰鍰：\n一、意圖滋事，於公園、車站、輪埠、航空站或其他公共場所，任意聚眾，有妨害公共秩序之虞，已受該管公務員解散命令，而不解散者。\n二、非供自用，購買運輸、遊樂票券而轉售圖利者。\n三、車、船、旅店服務人員或搬運工人或其他接待人員，糾纏旅客或強行攬載者。\n四、交通運輸從業人員，於約定報酬後，強索增加，或中途刁難或雖未約定，事後故意訛索，超出慣例者。\n五、主持、操縱或參加不良組織有危害社會秩序者。", "id": 125}, {"law": "社會秩序維護法", "chapter": "第 一 章 妨害安寧秩序", "num": "65", "title": "第 65 條", "content": "有左列各款行為之一者，處三日以下拘留或新臺幣一萬八千元以下罰鍰：\n一、船隻當狂風之際或黑夜航行有危險之虞，而不聽禁止者。\n二、對於非病死或可疑為非病死或來歷不明之屍體，未經報請相驗，私行殮葬或移置者。\n三、無正當理由，攜帶類似真槍之玩具槍，而有危害安全之虞者。\n四、不注意燃料物品之堆置使用，或在燃料物品之附近攜用或放置易起火警之物，不聽禁止者。", "id": 126}, {"law": "社會秩序維護法", "chapter": "第 一 章 妨害安寧秩序", "num": "66", "title": "第 66 條", "content": "有左列各款行為之一者，處三日以下拘留或新臺幣一萬八千元以下罰鍰：\n一、吸食或施打煙毒或麻醉藥品以外之迷幻物品者。\n二、冒用他人身分或能力之證明文件者。", "id": 127}, {"law": "社會秩序維護法", "chapter": "第 一 章 妨害安寧秩序", "num": "67", "title": "第 67 條", "content": "有左列各款行為之一者，處三日以下拘留或新臺幣一萬二千元以下罰鍰：\n一、禁止特定人涉足之場所之負責人或管理人，明知其身分不加勸阻而不報告警察機關者。\n二、於警察人員依法調查或查察時，就其姓名、住所或居所為不實之陳述或拒絕陳述者。\n三、意圖他人受本法處罰而向警察機關誣告者。\n四、關於他人違反本法，向警察機關為虛偽之證言或通譯者。\n五、藏匿違反本法之人或使之隱避者。\n六、偽造、變造、湮滅或隱匿關係他人違反本法案件之證據者。\n因圖利配偶、五親等內之血親或三親等內之姻親，而為前項第四款至第六款行為之一者，處以申誡或免除其處罰。", "id": 128}, {"law": "社會秩序維護法", "chapter": "第 一 章 妨害安寧秩序", "num": "68", "title": "第 68 條", "content": "有左列各款行為之一者，處三日以下拘留或新臺幣一萬二千元以下罰鍰：\n一、無正當理由，於公共場所、房屋近旁焚火而有危害安全之虞者。\n二、藉端滋擾住戶、工廠、公司行號、公共場所或公眾得出入之場所者。\n三、強買、強賣物品或強索財務者。", "id": 129}, {"law": "社會秩序維護法", "chapter": "第 一 章 妨害安寧秩序", "num": "69", "title": "第 69 條", "content": "有左列各款行為之一者，處三日以下拘留或新臺幣一萬二千元以下罰鍰：\n一、渡船、橋樑或道路經主管機關定有通行費額，而超額收費或藉故阻礙通行者。\n二、無票或不依定價擅自搭乘公共交通工具或進入遊樂場所，不聽勸阻或不照章補票或補價者。", "id": 130}, {"law": "社會秩序維護法", "chapter": "第 一 章 妨害安寧秩序", "num": "70", "title": "第 70 條", "content": "有左列各款行為之一者，處三日以下拘留或新臺幣一萬二千元以下罰鍰：\n一、畜養危險動物，影響鄰居安全者。\n二、畜養之危險動物，出入有人所在之道路、建築物或其他場所者。\n三、驅使或縱容動物嚇人者。", "id": 131}, {"law": "社會秩序維護法", "chapter": "第 一 章 妨害安寧秩序", "num": "71", "title": "第 71 條", "content": "於主管機關明示禁止出入之處所，擅行出入不聽勸阻者，處新臺幣六千元以下罰鍰。", "id": 132}, {"law": "社會秩序維護法", "chapter": "第 一 章 妨害安寧秩序", "num": "72", "title": "第 72 條", "content": "有下列各款行為之一者，處新臺幣一萬元以下罰鍰：\n一、於公共場所或公眾得出入之場所，酗酒滋事、謾罵喧鬧，不聽禁止者。\n二、製造噪音或深夜喧嘩，妨害公眾安寧，不聽禁止者。\n三、無正當理由，擅吹警笛或擅發其他警號者。", "id": 133}, {"law": "社會秩序維護法", "chapter": "第 一 章 妨害安寧秩序", "num": "73", "title": "第 73 條", "content": "有左列各款行為之一者，處新臺幣六千元以下罰鍰：\n一、於學校、博物館、圖書館、展覽會、運動會或其他公共場所，口角紛爭或喧嘩滋事，不聽禁止者。\n二、於自己經營地界內，當通行之處，有溝、井、坎、穴等，不設覆蓋或防圍者。\n三、於發生災變之際，停聚圍觀，妨礙救助或處理，不聽禁止者。\n四、污損祠宇、教堂、墓碑或公眾紀念之處所或設施者。", "id": 134}, {"law": "社會秩序維護法", "chapter": "第 一 章 妨害安寧秩序", "num": "74", "title": "第 74 條", "content": "有左列各款行為之一者，處新臺幣六千元以下罰鍰：\n一、深夜遊蕩，行跡可疑，經詢無正當理由，不聽禁止而有危害安全之虞者。\n二、無正當理由，隱藏於無人居住或無人看守之建築物、礦坑、壕洞、車、船或航空器內，而有危害安全之虞者。\n三、收容或僱用身分不明之人，未即時向警察機關報告，而有危害安全之虞者。\n四、未經警察機關許可，在公路兩旁，燃燒草木、雜物，有礙車輛駕駛人視線，影響交通安全者。\n五、婚喪喜慶、迎神賽會結眾而行，未將經過路線報告警察機關，致礙公眾通行者。\n六、無正當理由，停屍不殮、停厝不葬或藉故抬棺或抬屍滋擾者。", "id": 135}, {"law": "社會秩序維護法", "chapter": "第 一 章 妨害安寧秩序", "num": "75", "title": "第 75 條", "content": "有左列各款行為之一者，處新臺幣六千元以下罰鍰：\n一、擅自操縱路燈或交通號誌者。\n二、毀損路燈、交通號誌、道旁樹木或其他公共設施者。", "id": 136}, {"law": "社會秩序維護法", "chapter": "第 一 章 妨害安寧秩序", "num": "76", "title": "第 76 條", "content": "有左列各款行為之一者，處新臺幣三萬元以下罰鍰：\n一、當舖、各種加工、寄存、買賣、修配業，發現來歷不明之物品，不迅即報告警察機關者。\n二、發現槍械、彈藥或其他爆裂物，而不報告警察機關者。\n前項第一款其情節重大或再次違反者，處或併處停止營業或勒令歇業。", "id": 137}, {"law": "社會秩序維護法", "chapter": "第 一 章 妨害安寧秩序", "num": "77", "title": "第 77 條", "content": "公共遊樂場所之負責人或管理人，縱容兒童、少年於深夜聚集其內，而不即時報告警察機關者，處新臺幣一萬五千元以下罰鍰；其情節重大或再次違反者，處或併處停止營業或勒令歇業。", "id": 138}, {"law": "社會秩序維護法", "chapter": "第 一 章 妨害安寧秩序", "num": "78", "title": "第 78 條", "content": "有左列各款行為之一者，處新臺幣一萬五千元以下罰鍰：\n一、影印、縮印、放大通用之紙幣，並散布或販賣者。\n二、製造、散布或販賣通用紙幣、硬幣之仿製品者。", "id": 139}, {"law": "社會秩序維護法", "chapter": "第 一 章 妨害安寧秩序", "num": "79", "title": "第 79 條", "content": "有下列各款行為之一者，處新臺幣三千元以下罰鍰或申誡：\n一、於公共場所任意叫賣物品，妨礙交通，不聽禁止。\n二、跨越巷、道或在通道晾掛衣、物，不聽禁止。\n三、虐待動物，不聽勸阻。", "id": 140}, {"law": "社會秩序維護法", "chapter": "第 二 章 妨害善良風俗", "num": "80", "title": "第 80 條", "content": "有下列各款行為之一者，處新臺幣三萬元以下罰鍰：\n一、從事性交易。但符合第九十一條之一第一項至第三項之自治條例規定者，不適用之。\n二、在公共場所或公眾得出入之場所，意圖與人性交易而拉客。", "id": 141}, {"law": "社會秩序維護法", "chapter": "第 二 章 妨害善良風俗", "num": "81", "title": "第 81 條", "content": "有下列各款行為之一者，處三日以下拘留，併處新臺幣一萬元以上五萬元以下罰鍰；其情節重大者，得加重拘留至五日：\n一、媒合性交易。但媒合符合前條第一款但書規定之性交易者，不適用之。\n二、在公共場所或公眾得出入之場所，意圖媒合性交易而拉客。", "id": 142}, {"law": "社會秩序維護法", "chapter": "第 二 章 妨害善良風俗", "num": "82", "title": "第 82 條", "content": "有左列各款行為之一者，處三日以下拘留或新臺幣一萬二千元以下罰鍰：\n一、於公共場所或公眾得出入之場所，乞討叫化不聽勸阻者。\n二、於公共場所或公眾得出入之場所唱演或播放淫詞、穢劇或其他妨害善良風俗之技藝者。\n前項第二款唱演或播放之處所，為戲院、書場、夜總會、舞廳或同類場所，其情節重大或再次違反者，得處或併處停止營業或勒令歇業。", "id": 143}, {"law": "社會秩序維護法", "chapter": "第 二 章 妨害善良風俗", "num": "83", "title": "第 83 條", "content": "有下列各款行為之一者，處新臺幣六千元以下罰鍰：\n一、故意窺視他人臥室、浴室、廁所、更衣室，足以妨害其隱私者。\n二、於公共場所或公眾得出入之場所，任意裸體或為放蕩之姿勢，而有妨害善良風俗，不聽勸阻者。\n三、以猥褻之言語、舉動或其他方法，調戲他人者。", "id": 144}, {"law": "社會秩序維護法", "chapter": "第 二 章 妨害善良風俗", "num": "84", "title": "第 84 條", "content": "於非公共場所或非公眾得出入之職業賭博場所，賭博財物者，處新臺幣九千元以下罰鍰。", "id": 145}, {"law": "社會秩序維護法", "chapter": "第 三 章 妨害公務", "num": "85", "title": "第 85 條", "content": "有左列各款行為之一者，處拘留或新臺幣一萬二千元以下罰鍰：\n一、於公務員依法執行職務時，以顯然不當之言詞或行動相加，尚未達強暴脅迫或侮辱之程度者。\n二、於公務員依法執行職務時，聚眾喧嘩，致礙公務進行者。\n三、故意向該公務員謊報災害者。\n四、無故撥打警察機關報案專線，經勸阻不聽者。", "id": 146}, {"law": "社會秩序維護法", "chapter": "第 三 章 妨害公務", "num": "86", "title": "第 86 條", "content": "於政府機關或其他辦公處所，任意喧嘩或兜售物品，不聽禁止者，處新臺幣三千元以下罰鍰或申誡。", "id": 147}, {"law": "社會秩序維護法", "chapter": "第 四 章 妨害他人身體財產", "num": "87", "title": "第 87 條", "content": "有下列各款行為之一者，處新臺幣一萬八千元以下罰鍰：\n一、加暴行於人者。\n二、互相鬥毆者。\n三、意圖鬥毆而聚眾者。", "id": 148}, {"law": "社會秩序維護法", "chapter": "第 四 章 妨害他人身體財產", "num": "88", "title": "第 88 條", "content": "有左列各款行為之一者，處新臺幣三千元以下罰鍰：\n一、未經他人許可，釋放他人之動物、船筏或其他物品，或擅駛他人之車、船者。\n二、任意採折他人竹木、菜果、花卉或其他植物者。", "id": 149}, {"law": "社會秩序維護法", "chapter": "第 四 章 妨害他人身體財產", "num": "89", "title": "第 89 條", "content": "有下列各款行為之一者，處新臺幣三萬元以下罰鍰或申誡：\n一、無正當理由，為人施催眠術或施以藥物者。\n二、無正當理由，跟追他人，經勸阻不聽者。", "id": 150}, {"law": "社會秩序維護法", "chapter": "第 四 章 妨害他人身體財產", "num": "90", "title": "第 90 條", "content": "有左列各款行為之一者，處新臺幣三千元以下罰鍰或申誡：\n一、污損他人之住宅題誌、店舖招牌或其他正當之告白或標誌者。\n二、未經他人許可，張貼、塗抹或畫刻於他人之交通工具、圍牆、房屋或其他建築物者。", "id": 151}, {"law": "社會秩序維護法", "chapter": "第 四 章 妨害他人身體財產", "num": "91", "title": "第 91 條", "content": "有左列各款行為之一者，處新臺幣一千五百元以下罰鍰或申誡：\n一、污濕他人之身體、衣著或物品而情節重大者。\n二、故意踐踏他人之田園或縱入牲畜者。\n三、於他人之土地內，擅自釣魚、牧畜，不聽勸阻者。\n四、於他人之土地內，擅自挖掘土石、棄置廢棄物或取水，不聽勸阻者。", "id": 152}, {"law": "社會秩序維護法", "chapter": "第 四 編 附則", "num": "91-1", "title": "第 91-1 條", "content": "直轄市、縣（市）政府得因地制宜，制定自治條例，規劃得從事性交易之區域及其管理。", "id": 153}, {"law": "社會秩序維護法", "chapter": "第 四 編 附則", "num": "92", "title": "第 92 條", "content": "法院受理違反本法案件，除本法有規定者外，準用刑事訴訟法之規定。", "id": 154}, {"law": "社會秩序維護法", "chapter": "第 四 編 附則", "num": "93", "title": "第 93 條", "content": "違反本法案件處理辦法，由行政院會同司法院定之。拘留所設置管理辦法、沒入物品處分規則，由行政院定之。", "id": 155}, {"law": "社會秩序維護法", "chapter": "第 四 編 附則", "num": "94", "title": "第 94 條", "content": "本法自公布日施行。", "id": 156}, {"law": "警察職權行使法", "chapter": "第 一 章 總則", "num": "1", "title": "第 1 條", "content": "為規範警察依法行使職權，以保障人民權益，維持公共秩序，保護社會安全，特制定本法。", "id": 157}, {"law": "警察職權行使法", "chapter": "第 一 章 總則", "num": "2", "title": "第 2 條", "content": "本法所稱警察，係指警察機關與警察人員之總稱。本法所稱警察職權，係指警察為達成其法定任務，於執行職務時，依法採取查證身分、鑑識身分、蒐集資料、通知、管束、驅離、直接強制、物之扣留、保管、變賣、拍賣、銷毀、使用、處置、限制使用、進入住宅、建築物、公共場所、公眾得出入場所或其他必要之公權力之具體措施。本法所稱警察機關主管長官，係指地區警察分局長或其相當職務以上長官。", "id": 158}, {"law": "警察職權行使法", "chapter": "第 一 章 總則", "num": "3", "title": "第 3 條", "content": "警察行使職權，不得逾越所欲達成執行目的之必要限度，且應以對人民權益侵害最少之適當方法為之。警察行使職權已達成其目的，或依當時情形，認為目的無法達成時，應依職權或因義務人、利害關係人之申請終止執行。警察行使職權，不得以引誘、教唆人民犯罪或其他違法之手段為之。", "id": 159}, {"law": "警察職權行使法", "chapter": "第 一 章 總則", "num": "4", "title": "第 4 條", "content": "警察行使職權時，應著制服或出示證件表明身分，並應告知事由。警察未依前項規定行使職權者，人民得拒絕之。", "id": 160}, {"law": "警察職權行使法", "chapter": "第 一 章 總則", "num": "5", "title": "第 5 條", "content": "警察行使職權致人受傷者，應予必要之救助或送醫救護。", "id": 161}, {"law": "警察職權行使法", "chapter": "第 二 章 身分查證及資料蒐集", "num": "6", "title": "第 6 條", "content": "警察於公共場所或合法進入之場所，得對於下列各款之人查證其身分：\n一、合理懷疑其有犯罪之嫌疑或有犯罪之虞者。\n二、有事實足認其對已發生之犯罪或即將發生之犯罪知情者。\n三、有事實足認為防止其本人或他人生命、身體之具體危害，有查證其身分之必要者。\n四、滯留於有事實足認有陰謀、預備、著手實施重大犯罪或有人犯藏匿之處所者。\n五、滯留於應有停（居）留許可之處所，而無停（居）留許可者。\n六、行經指定公共場所、路段及管制站者。\n前項第六款之指定，以防止犯罪，或處理重大公共安全或社會秩序事件而有必要者為限。其指定應由警察機關主管長官為之。\n警察進入公眾得出入之場所，應於營業時間為之，並不得任意妨礙其營業。", "id": 162}, {"law": "警察職權行使法", "chapter": "第 二 章 身分查證及資料蒐集", "num": "7", "title": "第 7 條", "content": "警察依前條規定，為查證人民身分，得採取下列之必要措施：\n一、攔停人、車、船及其他交通工具。\n二、詢問姓名、出生年月日、出生地、國籍、住居所及身分證統一編號等。\n三、令出示身分證明文件。\n四、若有明顯事實足認其有攜帶足以自殺、自傷或傷害他人生命或身體之物者，得檢查其身體及所攜帶之物。\n依前項第二款、第三款之方法顯然無法查證身分時，警察得將該人民帶往勤務處所查證；帶往時非遇抗拒不得使用強制力，且其時間自攔停起，不得逾三小時，並應即向該管警察勤務指揮中心報告及通知其指定之親友或律師。", "id": 163}, {"law": "警察職權行使法", "chapter": "第 二 章 身分查證及資料蒐集", "num": "8", "title": "第 8 條", "content": "警察對於已發生危害或依客觀合理判斷易生危害之交通工具，得予以攔停並採行下列措施：\n一、要求駕駛人或乘客出示相關證件或查證其身分。\n二、檢查引擎、車身號碼或其他足資識別之特徵。\n三、要求駕駛人接受酒精濃度測試之檢定。\n警察因前項交通工具之駕駛人或乘客有異常舉動而合理懷疑其將有危害行為時，得強制其離車；有事實足認其有犯罪之虞者，並得檢查交通工具。", "id": 164}, {"law": "警察職權行使法", "chapter": "第 二 章 身分查證及資料蒐集", "num": "9", "title": "第 9 條", "content": "警察依事實足認集會遊行或其他公共活動參與者之行為，對公共安全或秩序有危害之虞時，於該活動期間，得予攝影、錄音或以其他科技工具，蒐集參與者現場活動資料。資料蒐集無法避免涉及第三人者，得及於第三人。依前項規定蒐集之資料，於集會遊行或其他公共活動結束後，應即銷毀之。但為調查犯罪或其他違法行為，而有保存之必要者，不在此限。", "id": 165}, {"law": "警察職權行使法", "chapter": "第 二 章 身分查證及資料蒐集", "num": "10", "title": "第 10 條", "content": "警察對於經常發生或經合理判斷可能發生犯罪案件之公共場所或公眾得出入之場所，為維護治安之必要時，得協調相關機關（構）裝設監視器，或以現有之攝影或其他科技工具蒐集資料。", "id": 166}, {"law": "警察職權行使法", "chapter": "第 二 章 身分查證及資料蒐集", "num": "11", "title": "第 11 條", "content": "警察對於下列情形之一者，為防止犯罪，認有必要，得經由警察局長書面同意後，於一定期間內，對其無隱私或秘密合理期待之行為或生活情形，以目視或科技工具，進行觀察及動態掌握等資料蒐集活動：一、有事實足認其有觸犯最輕本刑五年以上有期徒刑之罪之虞者。二、有事實足認其有參與職業性、習慣性、集團性或組織性犯罪之虞者。前項之期間每次不得逾一年，如有必要得延長之，並以一次為限。", "id": 167}, {"law": "警察職權行使法", "chapter": "第 二 章 身分查證及資料蒐集", "num": "12", "title": "第 12 條", "content": "警察為防止危害或犯罪，認對公共安全、公共秩序或個人生命、身體、自由、名譽或財產，將有危害行為，或有觸犯刑事法律之虞者，得遴選第三人秘密蒐集其相關資料。", "id": 168}, {"law": "警察職權行使法", "chapter": "第 二 章 身分查證及資料蒐集", "num": "13", "title": "第 13 條", "content": "警察依前條規定遴選第三人秘密蒐集特定人相關資料，應敘明原因事實，經該管警察局長或警察分局長核准後實施。", "id": 169}, {"law": "警察職權行使法", "chapter": "第 二 章 身分查證及資料蒐集", "num": "14", "title": "第 14 條", "content": "警察對於下列各款之人，得以口頭或書面敘明事由，通知其到場：一、有事實足認其能提供警察完成防止具體危害任務之必要資料者。二、有事實足認為防止具體危害，而有對其執行非侵入性鑑識措施之必要者。依前項通知到場者，應即時調查或執行鑑識措施。", "id": 170}, {"law": "警察職權行使法", "chapter": "第 二 章 身分查證及資料蒐集", "num": "15", "title": "第 15 條", "content": "警察為維護社會治安，並防制治安顧慮人口再犯，得定期實施查訪：一、曾犯殺人、強盜、搶奪、放火、妨害性自主、恐嚇取財、擄人勒贖、竊盜、詐欺、妨害自由、組織犯罪之罪，經執行完畢或假釋出獄者。二、受毒品戒治人或曾犯製造、運輸、販賣、持有毒品或槍砲彈藥之罪，經執行完畢或假釋出獄者。前項查訪期間，以刑執行完畢或假釋出獄後三年內為限。", "id": 171}, {"law": "警察職權行使法", "chapter": "第 二 章 身分查證及資料蒐集", "num": "16", "title": "第 16 條", "content": "警察於其行使職權之目的範圍內，必要時，得依其他機關之請求，傳遞與個人有關之資料。其他機關亦得依警察之請求，傳遞其保存與個人有關之資料。", "id": 172}, {"law": "警察職權行使法", "chapter": "第 二 章 身分查證及資料蒐集", "num": "17", "title": "第 17 條", "content": "警察對於依本法規定所蒐集資料之利用，應於法令職掌之必要範圍內為之，並須與蒐集之特定目的相符。但法律有特別規定者，不在此限。", "id": 173}, {"law": "警察職權行使法", "chapter": "第 二 章 身分查證及資料蒐集", "num": "18", "title": "第 18 條", "content": "警察依法取得之資料對警察之完成任務不再有幫助者，應予以註銷或銷毀。但資料之註銷或銷毀將危及被蒐集對象值得保護之利益者，不在此限。除法律另有特別規定者外，所蒐集之資料，至遲應於資料製作完成時起五年內註銷或銷毀之。", "id": 174}, {"law": "警察職權行使法", "chapter": "第 三 章 即時強制", "num": "19", "title": "第 19 條", "content": "警察對於有下列情形之一者，得為管束：\n一、瘋狂或酒醉，非管束不能救護其生命、身體之危險，或預防他人生命、身體之危險。\n二、意圖自殺，非管束不能救護其生命。\n三、暴行或鬥毆，非管束不能預防其傷害。\n四、其他認為必須救護或有危害公共安全之虞，非管束不能救護或不能預防危害。\n警察為前項管束，應於危險或危害結束時終止管束，管束時間最長不得逾二十四小時；並應即時以適當方法通知或交由其家屬或其他關係人，或適當之機關（構）或人員保護。\n警察依第一項規定為管束時，得檢查受管束人之身體及所攜帶之物。", "id": 175}, {"law": "警察職權行使法", "chapter": "第 三 章 即時強制", "num": "20", "title": "第 20 條", "content": "警察依法留置、管束人民，有下列情形之一者，於必要時，得對其使用警銬或其他經核定之戒具：\n一、抗拒留置、管束措施時。\n二、攻擊警察或他人，毀損執行人員或他人物品，或有攻擊、毀損行為之虞時。\n三、自殺、自傷或有自殺、自傷之虞時。\n警察對人民實施查證身分或其他詢問，不得依管束之規定，令其供述。", "id": 176}, {"law": "警察職權行使法", "chapter": "第 三 章 即時強制", "num": "21", "title": "第 21 條", "content": "警察對軍器、凶器或其他危險物品，為預防危害之必要，得扣留之。", "id": 177}, {"law": "警察職權行使法", "chapter": "第 三 章 即時強制", "num": "22", "title": "第 22 條", "content": "警察對於依法扣留之物，應簽發扣留物清單，載明扣留之時間、處所、扣留物之名目及其他必要之事項，交付該物之所有人、持有人或保管人。依法扣留之物，應加封緘或其他標示妥善保管。前項扣留之物，除依法應沒收、沒入、毀棄或應變價發還者外，期間不得逾三十日；扣留原因未消失時，得延長之，其延長期間不得逾二個月。", "id": 178}, {"law": "警察職權行使法", "chapter": "第 三 章 即時強制", "num": "23", "title": "第 23 條", "content": "有腐壞或價值重大減損之虞、保管照料或持有所費過鉅、扣留期間逾六個月無法返還、經通知三個月內領取而未領取等情形之一者，扣留之物得予變賣。", "id": 179}, {"law": "警察職權行使法", "chapter": "第 三 章 即時強制", "num": "24", "title": "第 24 條", "content": "扣留之物無繼續扣留之必要者，應將該物返還所有人、持有人或保管人；所有人、持有人或保管人不明時，得返還其他能證明對該物有權利之人。", "id": 180}, {"law": "警察職權行使法", "chapter": "第 三 章 即時強制", "num": "25", "title": "第 25 條", "content": "警察遇有天災、事變或交通上或公共安全上有危害情形，非使用或處置人民之土地、住宅、建築物、物品或限制其使用，不能達防護之目的時，得使用、處置或限制其使用。", "id": 181}, {"law": "警察職權行使法", "chapter": "第 三 章 即時強制", "num": "26", "title": "第 26 條", "content": "警察因人民之生命、身體、財產有迫切之危害，非進入不能救護時，得進入住宅、建築物或其他處所。", "id": 182}, {"law": "警察職權行使法", "chapter": "第 三 章 即時強制", "num": "27", "title": "第 27 條", "content": "警察行使職權時，為排除危害，得將妨礙之人、車暫時驅離或禁止進入。", "id": 183}, {"law": "警察職權行使法", "chapter": "第 三 章 即時強制", "num": "28", "title": "第 28 條", "content": "警察為制止或排除現行危害公共安全、公共秩序或個人生命、身體、自由、名譽或財產之行為或事實狀況，得行使本法規定之職權或採取其他必要之措施。警察依前項規定，行使職權或採取措施，以其他機關就該危害無法或不能即時制止或排除者為限。", "id": 184}, {"law": "警察職權行使法", "chapter": "第 四 章 救濟", "num": "29", "title": "第 29 條", "content": "義務人或利害關係人對警察依本法行使職權之方法、應遵守之程序或其他侵害利益之情事，得於警察行使職權時，當場陳述理由，表示異議。前項異議，警察認為有理由者，應立即停止或更正執行行為；認為無理由者，得繼續執行，經義務人或利害關係人請求時，應將異議之理由製作紀錄交付之。義務人或利害關係人因警察行使職權有違法或不當情事，致損害其權益者，得依法提起訴願及行政訴訟。", "id": 185}, {"law": "警察職權行使法", "chapter": "第 四 章 救濟", "num": "30", "title": "第 30 條", "content": "警察違法行使職權，有國家賠償法所定國家負賠償責任之情事者，人民得依法請求損害賠償。", "id": 186}, {"law": "警察職權行使法", "chapter": "第 四 章 救濟", "num": "31", "title": "第 31 條", "content": "警察依法行使職權，因人民特別犧牲，致其生命、身體或財產遭受損失時，人民得請求補償。但人民有可歸責之事由時，法院得減免其金額。前項損失補償，應以金錢為之，並以補償實際所受之特別損失為限。損失補償，應於知有損失後，二年內向警察機關請求之。但自損失發生後，經過五年者，不得為之。", "id": 187}, {"law": "警察職權行使法", "chapter": "第 五 章 附則", "num": "32", "title": "第 32 條", "content": "本法自中華民國九十二年十二月一日施行。", "id": 188}, {"law": "桃園市政府警察局捷運警察隊與轄區警察機關權責劃分及聯繫要點", "chapter": "", "num": "一", "title": "第一點", "content": "一、為劃分桃園市政府警察局捷運警察隊（以下簡稱捷運警察隊）與轄區警察機關就臺灣桃園國際機場聯外捷運系統（以下簡稱機場捷運系統）之管轄權責，並強化工作聯繫，特訂定本要點。", "id": 189}, {"law": "桃園市政府警察局捷運警察隊與轄區警察機關權責劃分及聯繫要點", "chapter": "", "num": "二", "title": "第二點", "content": "二、捷運警察隊權責區域範圍如下：\n（一）捷運沿線：1.高架部分：以機場捷運系統高架建築結構物最外緣為界。2.平面部分：以機場捷運系統結構最外緣為界。3.地下部分：以機場捷運系統地面下建築結構（含隧道）最外緣為界。\n（二）捷運廠站：以機場捷運系統車站結構物及機廠圍籬最外緣為界。", "id": 190}, {"law": "桃園市政府警察局捷運警察隊與轄區警察機關權責劃分及聯繫要點", "chapter": "", "num": "三", "title": "第三點", "content": "三、捷運警察隊任務如下：\n（一）防護機場捷運系統路線、維持場站及行車秩序、保障旅客安全。\n（二）機場捷運系統場站、車廂內刑事案件初步偵查處理、違反社會秩序維護法案件行政調查及犯罪預防宣導事項。\n（三）機場捷運系統綠帶、站外停車場、捷運車廂、站體內違規攤販、車輛及違反大眾捷運法案件之取締。\n（四）機場捷運系統行車事故與意外事件處理。", "id": 191}, {"law": "桃園市政府警察局捷運警察隊與轄區警察機關權責劃分及聯繫要點", "chapter": "", "num": "四", "title": "第四點", "content": "四、捷運警察隊與轄區警察機關處理各類案件之責任區劃分律定如下：\n（一）機場捷運系統場站、綠帶、廠站(機廠)、商場及停車場內刑事、違反社會秩序維護法案件及意外事故（含道路交通事故），以轄區警察機關為管轄。\n（二）機場捷運系統移動車廂內發生之案件以被害人下車停靠站之轄區警察機關為管轄。", "id": 192}, {"law": "桃園市政府警察局捷運警察隊與轄區警察機關權責劃分及聯繫要點", "chapter": "", "num": "五", "title": "第五點", "content": "五、捷運警察隊與轄區警察機關處理各類案件之工作聯繫程序：\n（一）機場捷運系統場站、車廂內之犯罪預防及宣導，由捷運警察隊及桃園大眾捷運股份有限公司（以下簡稱捷運公司）負責，必要時得商請轄區警察機關及本局刑事警察大隊協助。\n（二）機場捷運系統發生火災、地震、毒氣或其他災害，由捷運警察隊負責疏散、警戒，並由捷運公司及各類災害主管機關負責救災等工作執行。\n（三）機場捷運系統內發生行車事故之處理，由捷運警察隊負責現場封鎖管制及進行相關人、物證調查，並同步通知轄區警察機關到場採證及辦理後續相關事宜，必要時通知轄區警察機關刑事鑑識中心到場採證。\n（四）機場捷運系統內相關之集會、遊行事件，依集會遊行法之規定辦理。\n（五）捷運警察隊受理機場捷運系統場站、移動車廂內、綠帶、廠站（機廠）、商場及停車場無嫌犯及無現場之刑事與違反社會秩序維護法等案件，捷運警察隊應立即依單一窗口之規定作必要記錄外，並通報轄區警察機關作後續處理：1.案件由捷運警察隊員警先行受理完成報案後，捷運警察隊應將案件之相關卷證、機場捷運系統錄影監視影像及辦理刑事案件移辦檢核表等資料，依「警察機關受理刑事案件報案單一窗口實施要點」規定辦理。2.報案民眾要求就近至轄區警察機關所屬單位（派出所、內政部警政署航空警察局警察分隊）受理者，應引導至最近之警察單位報案，並協助釐清案件發生之時、地、相關證物及機場捷運系統內錄影監視系統影像之調閱，送交受理機關(單位)彙辦。\n（六）查獲違反刑事或社會秩序維護法案件涉案人時，由捷運警察隊負責初步處理以釐清案情（如封鎖管制現場、證物查扣及蒐集相關證據等），俾利轄區警察機關接續偵辦；另由捷運警察隊同步協助轄區警察機關向捷運公司調閱申請案發現場機場捷運系統內錄影監視系統影像及相關證據蒐集等資料，併送交受理機關（單位），以利偵辦。\n（七）機場捷運系統場站、車廂內、商場及停車場發生有現場之刑事、社會秩序維護法案件，由捷運警察隊負責封鎖管制及進行初步調查，並通報轄區警察機關實施後續調查。機場捷運系統綠帶及站外所屬停車場發生刑事、社會秩序維護法案件及意外事故（含道路交通事故）時，由接獲報案單位，通報轄區警察機關處理，捷運警察隊協助之。\n（八）轄區警察機關接獲捷運警察隊移送案件後，應將處理情形（如通報單、移送書、處分書及發生破獲紀錄表）副知捷運警察隊，以資建檔統計。\n（九）機場捷運系統內之場站、車廂、隧道（涵管）及所屬停車場發現爆裂物時，由捷運警察隊負責現場封鎖、警戒及旅客疏散，並通知內政部警政署刑事警察局偵查第五大隊及轄區警察機關派員至現場處理。\n（十）機場捷運系統非營運時間內，發生屬捷運警察權限範圍內之各項違規、違反大眾捷運法案件、意外事故（含道路交通事故）時，由轄區警察機關先作緊急處理，俟捷運警察隊趕赴現場後，再移由捷運警察隊負責處理。\n（十一）機場捷運系統結構物外之綠帶及站外所屬停車場等開放空間治安維護工作，營業時間由捷運警察隊負責；非營運時間由轄區警察機關負責。", "id": 193}, {"law": "桃園市政府警察局捷運警察隊與轄區警察機關權責劃分及聯繫要點", "chapter": "", "num": "六", "title": "第六點", "content": "六、機場捷運系統內遇重大事故或突發事件時，捷運警察隊應向轄區警察機關通報請求支援，並受當地分局長或內政部警政署航空警察局保安警察大隊大隊長指揮，同時依警察機關勤務指揮中心作業規定通報。", "id": 194}, {"law": "桃園市政府警察局捷運警察隊與轄區警察機關權責劃分及聯繫要點", "chapter": "", "num": "七", "title": "第七點", "content": "七、捷運警察隊以遂行防護機場捷運系統路線、維持場站及行車秩序、保障旅客安全等專業任務為主，平日各項勤務執行應與轄區警察機關密切聯繫、協調配合。", "id": 195}, {"law": "桃園市政府警察局捷運警察隊與轄區警察機關權責劃分及聯繫要點", "chapter": "", "num": "八", "title": "第八點", "content": "八、轄區警察機關因案件管轄有爭議時，報請共同之直接上級機關決定之。", "id": 196}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "1", "title": "桃園大眾捷運股份有限公司(以下簡…", "content": "桃園大眾捷運股份有限公司(以下簡稱本公司)為提供旅客舒適、便捷、安全、可靠之服務，特依「桃園市大眾捷運系統旅客運送規則」訂定本須知，並於車站公告，變更或調整時亦同。", "id": 197}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "2", "title": "本須知用語定義如下：", "content": "本須知用語定義如下：", "id": 198}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "3", "title": "捷運範圍：為本公司所經營管理之大…", "content": "捷運範圍：為本公司所經營管理之大眾捷運系統路網範圍內所有路線、場、站與列車等區域。", "id": 199}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "4", "title": "旅客：指搭乘本公司列車，或持有效…", "content": "旅客：指搭乘本公司列車，或持有效車票進出車站之人。", "id": 200}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "5", "title": "自動收費閘門：指設置於站內付費區…", "content": "自動收費閘門：指設置於站內付費區與非付費區之間，採自動驗票方式管制旅客進出之設備。", "id": 201}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "6", "title": "付費區：指車站內旅客持有車票，經…", "content": "付費區：指車站內旅客持有車票，經自動收費閘門驗票或經站務人員查驗無誤後，始得進入之區域。", "id": 202}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "7", "title": "車票：指供旅客搭乘本公司經營之大…", "content": "車票：指供旅客搭乘本公司經營之大眾捷運系統之有效憑證，包含本公司發行及各發行機構依法發行，經本公司同意使用之票證。", "id": 203}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "8", "title": "無票：未持有效車票或未經正常驗票…", "content": "無票：未持有效車票或未經正常驗票程序進入付費區。", "id": 204}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "9", "title": "失效車票：已逾有效使用期限或可使…", "content": "失效車票：已逾有效使用期限或可使用次數之車票。", "id": 205}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "10", "title": "非經本公司准許之車輛或人員，不得…", "content": "非經本公司准許之車輛或人員，不得進入本公司之路線、橋樑、隧道、涵管內及站區內非供公眾通行之處所。旅客除經天橋及地下道外，不得跨越完全獨立專用路權之大眾捷運系統路線。", "id": 206}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "11", "title": "本公司因天災事變、罷工、外來因素…", "content": "本公司因天災事變、罷工、外來因素所肇致之事故或路線施工、運輸擁擠、交通管制等不可歸責於本身之事由時，為顧及旅客權益，得為下列必要措施：", "id": 207}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "12", "title": "暫停部份或全部營運區段。", "content": "暫停部份或全部營運區段。", "id": 208}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "13", "title": "限制或停用車站供公眾使用之設施。", "content": "限制或停用車站供公眾使用之設施。", "id": 209}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "14", "title": "限制或停止旅客上下列車。", "content": "限制或停止旅客上下列車。", "id": 210}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "15", "title": "強制旅客離開列車或站區。", "content": "強制旅客離開列車或站區。", "id": 211}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "16", "title": "本公司於執行前項各款措施時，應於…", "content": "本公司於執行前項各款措施時，應於有關車站公告事由，並即時通報旅客。", "id": 212}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "17", "title": "捷運範圍內之設備或設施，旅客應依…", "content": "捷運範圍內之設備或設施，旅客應依照標示之規定或方法使用，並不得擅自占用、破壞、毀損、干擾或移動。", "id": 213}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "18", "title": "旅客有下列情形之一者，本公司人員…", "content": "旅客有下列情形之一者，本公司人員得視情節會同警察人員強制或護送其離開捷運系統範圍。其未乘車區間之票款，旅客得請求退還：", "id": 214}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "19", "title": "違反法令、公共秩序、善良風俗或旅…", "content": "違反法令、公共秩序、善良風俗或旅客須知。", "id": 215}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "20", "title": "依法令得為拒絕運送之處置。", "content": "依法令得為拒絕運送之處置。", "id": 216}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "21", "title": "騷擾他人，或行為有明顯傷害他人或…", "content": "騷擾他人，或行為有明顯傷害他人或自己之虞。", "id": 217}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "22", "title": "未著衣物、穿著或攜帶不潔、惡臭或…", "content": "未著衣物、穿著或攜帶不潔、惡臭或異味之衣著、物品影響他人或公共衛生。", "id": 218}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "23", "title": "需他人護送之旅客而無護送人陪同。", "content": "需他人護送之旅客而無護送人陪同。", "id": 219}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "24", "title": "隨身攜帶物品之長度、體積造成他人…", "content": "隨身攜帶物品之長度、體積造成他人重大不便。", "id": 220}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "25", "title": "在捷運範圍內，不得有下列行為：", "content": "在捷運範圍內，不得有下列行為：", "id": 221}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "26", "title": "於車站、車廂內推擠或影響自己或他…", "content": "於車站、車廂內推擠或影響自己或他人安全。", "id": 222}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "27", "title": "於車站、車廂內使用直排輪、溜冰鞋…", "content": "於車站、車廂內使用直排輪、溜冰鞋、滑板、滑板車等其他類似器材。", "id": 223}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "28", "title": "坐、臥於車廂、車站地板、設備或設…", "content": "坐、臥於車廂、車站地板、設備或設施上。", "id": 224}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "29", "title": "於車站、車廂吸菸或吸食電子菸（霧…", "content": "於車站、車廂吸菸或吸食電子菸（霧化器）。", "id": 225}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "30", "title": "其他行為有造成大眾捷運系統運轉之…", "content": "其他行為有造成大眾捷運系統運轉之障礙或構成危險之虞。", "id": 226}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "31", "title": "違反其他本公司公告禁止之事項。", "content": "違反其他本公司公告禁止之事項。", "id": 227}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "32", "title": "在捷運範圍內，為維護安全，搭乘電…", "content": "在捷運範圍內，為維護安全，搭乘電扶梯，應緊握扶手、站穩踏階，勿倚靠側板，且不得有下列行為：", "id": 228}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "33", "title": "不按遵行之方向於電扶梯上行走。", "content": "不按遵行之方向於電扶梯上行走。", "id": 229}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "34", "title": "於電扶梯上奔跑。", "content": "於電扶梯上奔跑。", "id": 230}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "35", "title": "嬉戲、跳躍、跨越兩側護欄或從事其…", "content": "嬉戲、跳躍、跨越兩側護欄或從事其他危險行為。", "id": 231}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "36", "title": "攜帶大件行李之旅客、年長及行動不…", "content": "攜帶大件行李之旅客、年長及行動不便者宜改搭電梯。", "id": 232}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "37", "title": "在捷運範圍內從事下列行為，應向本…", "content": "在捷運範圍內從事下列行為，應向本公司申請許可後，始得為之：", "id": 233}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "38", "title": "聚眾講演、播放音響、演奏樂器、舉…", "content": "聚眾講演、播放音響、演奏樂器、舉辦活動或其他干擾之行為。", "id": 234}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "39", "title": "張貼、塗抹、刻劃任何文字、圖畫或…", "content": "張貼、塗抹、刻劃任何文字、圖畫或其他類似物件於各項設施或建築物上。", "id": 235}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "40", "title": "於車站或車廂內照相、拍攝或攝影，…", "content": "於車站或車廂內照相、拍攝或攝影，有妨礙他人或系統安全之虞者。", "id": 236}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "41", "title": "於車站、車廂內，向他人為傳教、市…", "content": "於車站、車廂內，向他人為傳教、市場調查或其他類似行為。", "id": 237}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "42", "title": "散發報紙、傳單、廣告物或宣傳品。", "content": "散發報紙、傳單、廣告物或宣傳品。", "id": 238}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "43", "title": "使用車站、車廂內未開放使用之電源…", "content": "使用車站、車廂內未開放使用之電源插座。", "id": 239}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "44", "title": "非營運時間內，於車站或車廂內逗留…", "content": "非營運時間內，於車站或車廂內逗留。", "id": 240}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "45", "title": "車票種類及發售方式如下：", "content": "車票種類及發售方式如下：", "id": 241}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "46", "title": "單程票：提供旅客單次使用之車票。…", "content": "單程票：提供旅客單次使用之車票。於詢問處、單程票售票機或本公司指定處所發售。", "id": 242}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "47", "title": "團體票：提供旅客10人以上，全程…", "content": "團體票：提供旅客10人以上，全程同行且起訖站相同使用之車票。於詢問處或本公司指定處所發售。", "id": 243}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "48", "title": "定期票：提供旅客於一定期間內使用…", "content": "定期票：提供旅客於一定期間內使用之車票。於詢問處或本公司指定處所發售。", "id": 244}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "49", "title": "電子票證：各發行機構依法發行，經…", "content": "電子票證：各發行機構依法發行，經本公司同意使用之票證。", "id": 245}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "50", "title": "其他票種：依本公司官網公告辦法發…", "content": "其他票種：依本公司官網公告辦法發售。", "id": 246}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "51", "title": "除團體票、身高未滿115公分之兒…", "content": "除團體票、身高未滿115公分之兒童及身高滿115公分但未滿6歲兒童經出示身分證明文件者之外，車票每程僅限1人使用，不得多人共用，經查獲多人共用者，視為無票，依大眾捷運法第49條辦理。車票之有效使用期限依票載或公告之期限內有效，電子票證則依各發行機構公告期限內有效。", "id": 247}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "52", "title": "旅客應妥善使用、保管本公司發行之…", "content": "旅客應妥善使用、保管本公司發行之單程票，不得折損、刮傷或塗寫。如使用、保管不當，致無法辨識或使用者，應負損害賠償責任。", "id": 248}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "53", "title": "旅客持用車票損壞時，應立即向站務…", "content": "旅客持用車票損壞時，應立即向站務人員反應，損壞車票之處理方式如下：", "id": 249}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "54", "title": "旅客毀損單程票，須繳回並支付工本…", "content": "旅客毀損單程票，須繳回並支付工本費。", "id": 250}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "55", "title": "旅客持用之單程票於出站時遭車站設…", "content": "旅客持用之單程票於出站時遭車站設備損壞者，票卡由本公司收回，購票費用不予退還。", "id": 251}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "56", "title": "其他票種：依本公司官網公告辦法辦…", "content": "其他票種：依本公司官網公告辦法辦理。", "id": 252}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "57", "title": "旅客持用車票，除因可歸責於本公司…", "content": "旅客持用車票，除因可歸責於本公司之事由外，經自動收費閘門進入付費區至離開付費區之停留時限規定如下：", "id": 253}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "58", "title": "不同一車站進出，最大時限為2小時…", "content": "不同一車站進出，最大時限為2小時。", "id": 254}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "59", "title": "同一車站進出，最大時限為15分鐘…", "content": "同一車站進出，最大時限為15分鐘。", "id": 255}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "60", "title": "違反前項規定者，除應付之票價外，…", "content": "違反前項規定者，除應付之票價外，另加收本公司公告之單程票最低票價費用。", "id": 256}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "61", "title": "旅客乘車應支付之票價，以本公司於…", "content": "旅客乘車應支付之票價，以本公司於車站公告之票價表為準。其運價一律全票收費。同站進出者，應支付車站公告之單程票最低票價費用，如屬特殊情況，可洽站務人員協助處理。", "id": 257}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "62", "title": "身高未滿115公分之兒童，或身高…", "content": "身高未滿115公分之兒童，或身高滿115公分但未滿6歲之兒童經出示身分證明文件者，得免購票乘車，但須由已購票旅客陪同，違者本公司得拒絕運送。", "id": 258}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "63", "title": "旅客乘車逾站，除因可歸責於本公司…", "content": "旅客乘車逾站，除因可歸責於本公司之事由外，應補繳差額。", "id": 259}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "64", "title": "無票、持用失效車票或冒用不符身分…", "content": "無票、持用失效車票或冒用不符身分之車票乘車者，除補繳票價外，並支付票價50倍之違約金。", "id": 260}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "65", "title": "前項應補繳票價及支付之違約金，如…", "content": "前項應補繳票價及支付之違約金，如旅客不能證明其起站地點者，以本公司公告之單程票最高票價計算。", "id": 261}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "66", "title": "旅客於乘車途中遺失車票，未自動至…", "content": "旅客於乘車途中遺失車票，未自動至詢問處補票而遭查獲者，依無票搭乘規定處理。 前項旅客遺失車票自動補票者，免支付違約金。", "id": 262}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "67", "title": "旅客遺失單程票者，補票時需加收工…", "content": "旅客遺失單程票者，補票時需加收工本費。", "id": 263}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "68", "title": "旅客持用車票，未依規定通行自動收…", "content": "旅客持用車票，未依規定通行自動收費閘門者，除因不可歸責於旅客之事由外，應補繳該次旅程實際票價，如旅客不能證明其起站地點者，以本公司公告之單程票最高票價計算。", "id": 264}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "69", "title": "旅客須補票或支付違約金，如因故當…", "content": "旅客須補票或支付違約金，如因故當時無法繳交者，應出示身分證明文件，並填具旅客補繳車資處理單，於10日內至本公司指定之處所補繳。", "id": 265}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "70", "title": "前項費用或違約金逾期未繳納者，本…", "content": "前項費用或違約金逾期未繳納者，本公司得依法追償。", "id": 266}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "71", "title": "持用偽造或變造之車票者，除依無票…", "content": "持用偽造或變造之車票者，除依無票搭乘規定處理外，本公司將報請警察機關處理。", "id": 267}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "72", "title": "因車站發生緊急事故、異常狀況或列…", "content": "因車站發生緊急事故、異常狀況或列車因故運行中斷，須疏散旅客出站時，持用單程票之旅客得於當日起算7日內請求退還全部票價。持用其他票種之旅客，得於下次進站時由自動收費閘門免費更正車票資料或至詢問處免費更正車票資料。", "id": 268}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "73", "title": "因系統故障，致旅客受困於車廂或電…", "content": "因系統故障，致旅客受困於車廂或電梯內，補償方式依列車運行中斷旅客退費暨受困補償要點辦理。", "id": 269}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "74", "title": "旅客持用本公司發行車票，除因可歸…", "content": "旅客持用本公司發行車票，除因可歸責於本公司之事由或本公司另有公告外，一經使用概不退費。", "id": 270}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "75", "title": "非因車站發生緊急事故、異常狀況或…", "content": "非因車站發生緊急事故、異常狀況或列車因故運行中斷而未使用之單程票，限於購買當日辦理退費，其他票種依本公司官網公告辦法辦理。", "id": 271}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "76", "title": "旅客如中途出站，除因可歸責於本公…", "content": "旅客如中途出站，除因可歸責於本公司之事由外，其票價差額不予退還。", "id": 272}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "77", "title": "旅客申請本公司發行車票退費時，本…", "content": "旅客申請本公司發行車票退費時，本公司得扣除附加於車票之優待或折扣並加收手續費；若退費金額不足支付手續費，則不予退費。", "id": 273}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "78", "title": "旅客申請本公司發行車票退費，應先…", "content": "旅客申請本公司發行車票退費，應先行向本公司詢問處申請，經查驗無誤後，以現場或至指定處所領取等方式退回票款。", "id": 274}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "79", "title": "各家票證公司發售之票卡相關使用規…", "content": "各家票證公司發售之票卡相關使用規範，依該公司所訂定之約定條款規定辦理。", "id": 275}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "80", "title": "旅客隨身攜帶行李及物品，應符合下…", "content": "旅客隨身攜帶行李及物品，應符合下列規定：", "id": 276}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "81", "title": "不得妨礙其他旅客，並應自行保管及…", "content": "不得妨礙其他旅客，並應自行保管及照料。", "id": 277}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "82", "title": "每件長度不得超過165公分，長、…", "content": "每件長度不得超過165公分，長、寬、高之和不得超過220公分。但輪椅、嬰兒車、寵物推車及其他經本公司公告物品，不在此限。", "id": 278}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "83", "title": "旅客隨身攜帶氣球者，其數量不得超…", "content": "旅客隨身攜帶氣球者，其數量不得超過5個，且任1個最長邊不得超過50公分。", "id": 279}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "84", "title": "攜帶自行車應遵守本公司公告之「桃…", "content": "攜帶自行車應遵守本公司公告之「桃園捷運公司開放旅客攜帶自行車搭乘捷運應行注意事項」，且捷運範圍內不得騎乘或滑乘。", "id": 280}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "85", "title": "不得攜帶或乘坐代步器、電動車或其…", "content": "不得攜帶或乘坐代步器、電動車或其他類似動力機具。但領有身心障礙證明（手冊）或其他經本公司許可之旅客，可使用坐乘式輪椅或代步器等行動輔具，應緩速於車站內通行。", "id": 281}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "86", "title": "非捷運系統之人員於車站及車廂內不…", "content": "非捷運系統之人員於車站及車廂內不得攜帶、使用手推車或其他類似器具。但符合一般旅客隨身攜帶行李或物品尺寸規範，並經本公司許可者，不在此限。", "id": 282}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "87", "title": "攜帶動物進入站區或車輛內，應依本…", "content": "攜帶動物進入站區或車輛內，應依本條第(二)項規定裝於寵物箱、寵物車、小籠或小容器內，且包裝完固，無排泄物、液體漏出之虞，動物之頭、尾及四肢均不得露出，每1位購票旅客以攜帶1件為限。但警察人員攜帶之警犬，視覺、聽覺、肢體功能障礙者由合格導盲犬、導聾犬、肢體輔助犬陪同或導盲犬、導聾犬、肢體輔助犬專業訓練人員於執行訓練時帶同導盲、導聾、肢體輔助犬幼犬，不在此限。", "id": 283}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "88", "title": "前項允許攜帶之動物，由本公司於各…", "content": "前項允許攜帶之動物，由本公司於各車站公告，並得因應特殊狀況，另行公告於特定期間、區域內，限制旅客攜帶動物進入站區或車輛內。", "id": 284}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "89", "title": "未經許可，不得攜帶下列危險品或易…", "content": "未經許可，不得攜帶下列危險品或易燃物進入捷運範圍：", "id": 285}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "90", "title": "各種刀具、剪刀或其他尖銳物品。但…", "content": "各種刀具、剪刀或其他尖銳物品。但未違反法令，經妥善包裝，且無影響他人安全之虞者，不在此限。", "id": 286}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "91", "title": "各種槍械或彈藥。但值勤軍警人員攜…", "content": "各種槍械或彈藥。但值勤軍警人員攜帶槍械及彈藥，不在此限。", "id": 287}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "92", "title": "閃火點在攝氏60度以下之易燃液體…", "content": "閃火點在攝氏60度以下之易燃液體如：礦油、汽油、煤油、苯、甲苯（松香水）、甲醇、乙醇（酒精）、丙酮、乙醚、油漆（油性塑膠漆及溶劑性水泥漆等）、二硫化碳及其他易燃液體。", "id": 288}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "93", "title": "易於爆裂或爆炸之物品如：炸藥、彈…", "content": "易於爆裂或爆炸之物品如：炸藥、彈藥、火藥、電石、高壓氣體（氫氣、氧氣、丙烷、液化石油氣、乙炔等）、硝化纖維、二硝基苯、二硝基甲苯、三硝基甲苯、二硝基酚、三硝基酚（苦味酸）、硝化乙二醇、硝化甘油、硝酸酐、有機性過氧化合物、乾冰（固態二氧化碳）及其他容易爆炸之物等。", "id": 289}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "94", "title": "容易自燃或引燃之物品如：火藥、金…", "content": "容易自燃或引燃之物品如：火藥、金屬鈉、鉀汞合金、鎂粉、鋁粉、黃燐、硫化磷、磷化鈣、煙火、玩具煙火、爆竹、異丙醇及其他易燃固體等。但隨身使用之火柴、打火機等物品，不在此限。", "id": 290}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "95", "title": "容易侵害人體或有害他物之虞之物品…", "content": "容易侵害人體或有害他物之虞之物品如：硫酸、鹽酸、硝酸、鉛酸蓄電池、氯酸鹽（鉀、鈉、鋇）、過氯酸鹽（銨、鉀、鈉）、氯化磷、過氧化鈉、過氧化鋇、硝酸銨、漂白粉、農藥、殺蟲劑、除草劑、砷、砒霜、氰化物、鈾、鈽、鐳、醫療廢棄物，及其他具腐蝕性、毒性、放射性、傳染性物質或容易傷害人體之物品等。", "id": 291}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "96", "title": "旅客隨身攜帶行李，疑為危險品或易…", "content": "旅客隨身攜帶行李，疑為危險品或易燃物者，本公司得要求旅客澄清，並配合進行檢查。拒絕檢查者，視同攜帶危險品，本公司除拒絕運送外，並通報警察人員。", "id": 292}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "97", "title": "旅客遺失物品，可至詢問處、遺失物…", "content": "旅客遺失物品，可至詢問處、遺失物處理中心請本公司人員協尋，或電洽遺失物處理中心、客服專線代尋。", "id": 293}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "98", "title": "在車站、車廂內拾得遺失物，得交予…", "content": "在車站、車廂內拾得遺失物，得交予本公司詢問處或遺失物處理中心人員點驗處理，本公司將附收執聯單由拾得人收執。", "id": 294}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "99", "title": "在車站、車廂以外所有人不明之遺失…", "content": "在車站、車廂以外所有人不明之遺失物，由拾得人自行交由警察機關依法處理。", "id": 295}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "100", "title": "旅客認領遺失物時須能證明其為遺失…", "content": "旅客認領遺失物時須能證明其為遺失物之失主或所有人，若認領人非失主或所有人，則須持有認領人本人及失主或所有人之身分證件正本及委託書，始得辦理遺失物領回手續。遺失物如為貴重物品或具名之有價證券，則須由所有人親自領回；若原失主因不克親領，經代領人提出相關佐證並簽署代領切結書，得依前述作業辦理認領程序。", "id": 296}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "101", "title": "如遺失物已腐爛、產生惡臭等影響環…", "content": "如遺失物已腐爛、產生惡臭等影響環境衛生，得由本公司自行處理。", "id": 297}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "102", "title": "本公司依規定處理遺失物，不負遺失…", "content": "本公司依規定處理遺失物，不負遺失物損害賠償責任。", "id": 298}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "103", "title": "違反本須知規定者，本公司得拒絕運…", "content": "違反本須知規定者，本公司得拒絕運送；違反大眾捷運法者，本公司得視情節會同警察人員強制其離開。除本須知另有規定外，其未乘車區間票價不予退還。", "id": 299}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "104", "title": "大眾捷運法第50條：有下列情形之…", "content": "大眾捷運法第50條：有下列情形之一者，處新臺幣一千五百元以上七千五百元以下罰鍰：", "id": 300}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "105", "title": "車輛行駛中，攀登、跳車或攀附隨行…", "content": "車輛行駛中，攀登、跳車或攀附隨行。", "id": 301}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "106", "title": "妨礙車門、月台門關閉或擅自開啟。", "content": "妨礙車門、月台門關閉或擅自開啟。", "id": 302}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "107", "title": "非大眾捷運系統之車輛或人員，違反…", "content": "非大眾捷運系統之車輛或人員，違反第四十四條第二項前段規定，進入大眾捷運系統之路線、橋樑、隧道、涵管內及站區內非供公眾通行之處所。", "id": 303}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "108", "title": "未經驗票程序、不按規定處所或方式…", "content": "未經驗票程序、不按規定處所或方式出入車站或上下車。", "id": 304}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "109", "title": "拒絕大眾捷運系統站、車人員查票或…", "content": "拒絕大眾捷運系統站、車人員查票或妨害其執行職務。", "id": 305}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "110", "title": "滯留於不提供載客服務之車廂，不聽…", "content": "滯留於不提供載客服務之車廂，不聽勸止。", "id": 306}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "111", "title": "未經許可在車上或站區內募捐、散發…", "content": "未經許可在車上或站區內募捐、散發或張貼宣傳品、銷售物品或為其他商業行為。", "id": 307}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "112", "title": "未經許可攜帶動物進入站區或車輛內…", "content": "未經許可攜帶動物進入站區或車輛內。", "id": 308}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "113", "title": "於大眾捷運系統禁止飲食區內飲食，…", "content": "於大眾捷運系統禁止飲食區內飲食，嚼食口香糖或檳榔，或隨地吐痰、檳榔汁、檳榔渣，拋棄紙屑、菸蒂、口香糖、瓜果或其皮、核、汁、渣或其他一般廢棄物。", "id": 309}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "114", "title": "滯留於車站出入口、自動收費閘門、…", "content": "滯留於車站出入口、自動收費閘門、售票機、電扶梯或其他通道，致妨礙旅客通行或使用，不聽勸離。", "id": 310}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "115", "title": "非為乘車而在車站之旅客大廳、穿堂…", "content": "非為乘車而在車站之旅客大廳、穿堂層或月台層區域內遊蕩，致妨礙旅客通行或使用，不聽勸離。", "id": 311}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "116", "title": "躺臥於車廂內或月台上之座椅，不聽…", "content": "躺臥於車廂內或月台上之座椅，不聽勸阻。", "id": 312}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "117", "title": "未經許可在捷運系統路權範圍內設攤…", "content": "未經許可在捷運系統路權範圍內設攤、搭棚架或擺設筵席。", "id": 313}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "118", "title": "於月台上嬉戲、跨越黃色警戒線，或…", "content": "於月台上嬉戲、跨越黃色警戒線，或於電扶梯上不按遵行方向行走或奔跑，或為其他影響作業秩序及行車安全之行為，不聽勸止。", "id": 314}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "119", "title": "有前項各款情事之一者，大眾捷運系…", "content": "有前項各款情事之一者，大眾捷運系統站、車人員得視情節會同警察人員強制其離開站、車或大眾捷運系統區域，其未乘車區間之票款，不予退還。", "id": 315}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "120", "title": "大眾捷運法第50條之1：有下列情…", "content": "大眾捷運法第50條之1：有下列情形之一者，處新臺幣一萬元以上一百萬元以下罰鍰：", "id": 316}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "121", "title": "未經許可攜帶經公告之危險或易燃物…", "content": "未經許可攜帶經公告之危險或易燃物進入大眾捷運系統路線、場、站或車輛內。", "id": 317}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "122", "title": "任意操控站、車設備或妨礙行車、電…", "content": "任意操控站、車設備或妨礙行車、電力或安全系統設備正常運作。", "id": 318}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "123", "title": "違反第四十四條第三項規定，未經天…", "content": "違反第四十四條第三項規定，未經天橋或地下道，跨越完全獨立專用路權之大眾捷運系統路線。", "id": 319}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "124", "title": "有前項情形之一者，適用前條第二項…", "content": "有前項情形之一者，適用前條第二項規定。", "id": 320}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "125", "title": "未滿十四歲之人，因其法定代理人或…", "content": "未滿十四歲之人，因其法定代理人或監護人監督不周，致違反第一項規定時，處罰其法定代理人或監護人。", "id": 321}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "126", "title": "旅客於乘車途中發生病痛不適，可立…", "content": "旅客於乘車途中發生病痛不適，可立即通知本公司站務、行車人員代為通知醫療單位進行救護。", "id": 322}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "127", "title": "身心障礙旅客可通知本公司人員協助…", "content": "身心障礙旅客可通知本公司人員協助，或使用輔具循無障礙動線通行。", "id": 323}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "128", "title": "旅客如須諮詢或反映意見，本公司網…", "content": "旅客如須諮詢或反映意見，本公司網頁為https://www.tymetro.com.tw/或「i搭桃捷」App。", "id": 324}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "129", "title": "各票證公司發行之車票相關問題請逕…", "content": "各票證公司發行之車票相關問題請逕向各票證公司反應。", "id": 325}, {"law": "桃園大眾捷運系統旅客須知", "chapter": "", "num": "130", "title": "本須知自公告日起生效，修正時亦同…", "content": "本須知自公告日起生效，修正時亦同。", "id": 326}]</script>
+<script id="scenariodata" type="application/json">[{"id": "s01", "title": "旅客無票／持失效車票／冒用車票搭乘", "tag": "票務", "summary": "查獲旅客無票、車票失效或冒用不符身分之車票乘車，除補繳票價外，應加收票價 50 倍違約金；不能證明起站地點者，以公告單程票最高票價計算。屬捷運公司先行處理事項，員警於捷運公司員工要求協助或旅客拒絕配合、滋事時到場處理，必要時得依社維法或刑法相關規定處理拒不配合者。", "steps": ["請捷運站務人員先依大眾捷運法第49條向旅客補收票款及違約金。", "旅客拒絕配合、滋事或無法查證身分時，得依警職法第6、7條查證身分。", "如旅客實施第四十四條第二項前段行為（進入非供公眾通行處所）等，另涉大眾捷運法第50條，可另依大眾捷運法第50條舉發（處1,500–7,500元罰鍰）。", "持用偽造、變造車票者，依無票搭乘規定處理外，捷運公司將報請警察機關處理，必要時偵辦刑事責任。"], "refs": [59, 60, 162, 163]}, {"id": "s02", "title": "車站／車廂內酗酒滋事、謾罵喧鬧", "tag": "秩序", "summary": "於公共場所酗酒滋事、謾罵喧鬧不聽禁止者，依社會秩序維護法可處新臺幣一萬元以下罰鍰；如已達鬥毆、施暴程度，另涉第87條。", "steps": ["先行勸阻、制止，並告知違反社會秩序維護法第72條。", "如當事人有攻擊他人、鬥毆行為，另依社維法第87條處理（處1.8萬元以下罰鍰）。", "情況激烈非管束不能預防其傷害或危害公共安全者，得依警職法第19條為管束（最長不得逾24小時）。", "現行違反社維法之行為人得依社維法第42條即時制止並逕行通知到場，不服通知者得強制到場。"], "refs": [133, 148, 175, 107]}, {"id": "s03", "title": "月台／車廂鬥毆、互毆", "tag": "秩序", "summary": "加暴行於人、互相鬥毆或意圖鬥毆而聚眾，依社會秩序維護法第87條處新臺幣18,000元以下罰鍰；如致傷，另涉刑法傷害罪，應移送偵辦。", "steps": ["先行制止現場衝突，維護旅客安全，必要時通報捷運警察隊／轄區警察機關支援。", "依社維法第87條舉發；如涉及傷害等刑事責任，依社維法第38條移送檢察官偵辦。", "扣留具危險性之器械依警職法第21條辦理。", "依要點第四點，場站、車廂內刑案原則以轄區警察機關為管轄；捷運警察隊負責初步封鎖與蒐證。"], "refs": [148, 103, 177, 192]}, {"id": "s04", "title": "攜帶刀械／危險物品／易燃易爆物進站", "tag": "安全", "summary": "無正當理由攜帶具殺傷力之器械、化學製劑或危險物品，依社會秩序維護法第63條處3日以下拘留或3萬元以下罰鍰；未經許可攜帶經公告之危險或易燃物進入捷運系統，另涉大眾捷運法第50-1條（1萬至100萬元罰鍰）。", "steps": ["依警職法第7條查證身分，並依第4款檢查其身體及所攜帶之物（如有明顯事實足認攜帶足以自殺、自傷或傷害他人之物）。", "依警職法第21條扣留軍器、凶器或其他危險物品。", "分別依社會秩序維護法第63條、大眾捷運法第50-1條舉發，如涉刑法公共危險罪嫌，移送偵辦。", "旅客須知規定，捷運公司對疑似危險品得要求澄清並檢查，拒絕檢查視同攜帶危險品，將通報警察處理。"], "refs": [124, 61, 163, 177, 273]}, {"id": "s05", "title": "跨越軌道／月台警戒線／電扶梯逆向奔跑", "tag": "行車安全", "summary": "採完全獨立專用路權路線除天橋、地下道外不得跨越；於月台嬉戲、跨越黃色警戒線或電扶梯不按方向奔跑，依大眾捷運法第50條處1,500–7,500元罰鍰；未經天橋或地下道跨越者，依第50-1條處1萬至100萬元罰鍰。", "steps": ["立即制止並告知違反大眾捷運法第44條第3項及第50條第14款、第50-1條第1項第3款規定。", "依情節會同捷運公司站、車人員強制其離開站、車或捷運系統區域，未乘車區間票款不予退還。", "未滿14歲者違反規定，處罰其法定代理人或監護人（第50-1條第3項）。"], "refs": [49, 60, 61]}, {"id": "s06", "title": "破壞、竊佔捷運設施或入侵資通系統", "tag": "刑責", "summary": "擅自占用或破壞捷運用地、車輛或設施，除民事回復原狀／賠償外，涉及刑責應移送偵辦；以竊取、毀壞等非法方法危害重要站場設施功能正常運作者，處1–7年有期徒刑得併科1000萬元以下罰金（第48-1條）；入侵核心資通系統者，處1–7年有期徒刑得併科1000萬元以下罰金（第48-2條），意圖危害國家安全或社會安定者加重至3–10年。", "steps": ["現場封鎖、保全跡證，通報捷運警察隊／轄區警察機關及刑事單位到場。", "依大眾捷運法第48、48-1、48-2條認定行為態樣及刑度，並移送檢察官偵辦。", "涉及資通系統入侵，另會同資安或刑事鑑識單位處理。", "如致釀成災害、致人於死或重傷，依第48-1、48-2條加重其刑。"], "refs": [56, 57, 58]}, {"id": "s07", "title": "遊蕩、乞討、性交易拉客", "tag": "秩序", "summary": "於公共場所乞討叫化不聽勸阻，依社維法第82條處3日以下拘留或1.2萬元以下罰鍰；從事性交易或意圖性交易拉客，依第80、81條處罰（媒合性交易另處拘留併罰鍰）。", "steps": ["先行勸阻，不聽者依社維法第82條（乞討）或第80、81條（性交易／拉客）舉發。", "查證身分依警職法第6、7條辦理。", "情節輕微事實明確者，得依社維法第44條逕行處分（罰鍰以1,500元以下或申誡為限）。"], "refs": [143, 141, 142, 162, 109]}, {"id": "s08", "title": "民眾對執勤員警謾罵、聚眾喧嘩妨礙執法", "tag": "妨害公務", "summary": "於公務員依法執行職務時，以顯然不當言詞或行動相加尚未達強暴脅迫程度，或聚眾喧嘩致礙公務進行，依社會秩序維護法第85條處拘留或1.2萬元以下罰鍰；已達強暴脅迫程度則涉刑法妨害公務罪，應移送偵辦。", "steps": ["表明身分（著制服或出示證件）並告知事由，依警職法第4條辦理。", "情節屬社維法第85條者，依法舉發；已達刑法妨害公務程度者，依社維法第38條移送檢察官。", "義務人或利害關係人得依警職法第29條當場異議，員警應依規定處理異議。"], "refs": [146, 160, 103, 185]}, {"id": "s09", "title": "攔停查證身分", "tag": "警職權行使", "summary": "警察於公共場所或合法進入之場所，對合理懷疑有犯罪嫌疑之虞、對已發生或即將發生之犯罪知情、為防止具體危害有必要、滯留可疑處所或未經停居留許可等情形，得查證身分；必要時得攔停人車船、詢問姓名等資料、令出示證件，顯然無法查證身分時得帶往勤務處所（不得逾3小時並應通知親友或律師）。", "steps": ["確認查證身分之法定事由（警職法第6條各款）。", "依警職法第7條採取攔停、詢問、令出示證件等必要措施；有明顯事實足認攜帶自傷或傷人之物者，得檢查身體及攜帶物品。", "無法當場查證且符合要件者，得帶往勤務處所，時間自攔停起不得逾3小時，並向勤務指揮中心報告及通知其指定親友或律師。", "查證身分應著制服或出示證件表明身分並告知事由（第4條）；未依規定行使者，人民得拒絕。"], "refs": [162, 163, 160]}, {"id": "s10", "title": "管束醉漢、意圖自殺者或暴行鬥毆者", "tag": "即時強制", "summary": "警察對瘋狂或酒醉非管束不能救護其生命身體、意圖自殺、暴行鬥毆非管束不能預防傷害、或其他有危害公共安全之虞者，得為管束，最長不得逾24小時，並應即時通知家屬或適當機關人員保護。", "steps": ["確認符合警職法第19條各款管束事由。", "執行管束時得檢查受管束人身體及所攜帶之物；抗拒、攻擊或有自殺自傷之虞時，得依第20條使用警銬或戒具。", "危險或危害結束應即終止管束，並通知家屬、關係人或適當機關（構）人員保護。", "對人民實施查證身分或詢問，不得依管束規定令其供述。"], "refs": [175, 176]}, {"id": "s11", "title": "扣留危險物品／違禁品", "tag": "即時強制", "summary": "警察對軍器、凶器或其他危險物品，為預防危害之必要得扣留之；扣留應簽發清單、妥善保管，扣留期間原則不逾30日，必要時延長不逾2個月。", "steps": ["依警職法第21條扣留危險物品。", "依第22條簽發扣留物清單，載明時間、處所、名目等，加封緘妥善保管。", "無繼續扣留必要者依第24條返還所有人、持有人或保管人；符合第23條要件者得變賣。"], "refs": [177, 178, 179, 180]}, {"id": "s12", "title": "捷運範圍內集會、遊行活動", "tag": "轄區權責", "summary": "機場捷運系統內相關之集會、遊行事件，依集會遊行法之規定辦理；蒐證應依警職法第9條規定，於活動結束後原則銷毀所蒐集資料，但為調查犯罪或違法行為有保存必要者不在此限。", "steps": ["依集會遊行法規定辦理許可、蒐證及維持秩序等事宜。", "對參與者現場活動之攝影、錄音等資料蒐集，依警職法第9條規定辦理，活動結束後原則應銷毀。", "如涉及公共安全或秩序危害之虞，得依警職法第27、28條驅離、禁止進入或採取其他必要措施。"], "refs": [193, 165, 183, 184]}, {"id": "s13", "title": "捷運行車事故／意外事件處理權責", "tag": "轄區權責", "summary": "機場捷運系統內發生行車事故，由捷運警察隊負責現場封鎖管制及人、物證調查，並同步通知轄區警察機關到場採證及辦理後續事宜；必要時通知轄區警察機關刑事鑑識中心到場。", "steps": ["捷運警察隊到場後負責封鎖管制現場、進行人證物證調查。", "同步通知轄區警察機關到場採證、辦理後續相關事宜；必要時通知刑事鑑識中心。", "非營運時間發生行車事故等，由轄區警察機關先行緊急處理，捷運警察隊到場後再行接手。", "大眾捷運系統營運機構對重大行車事故應立即通報地方及中央主管機關（大眾捷運法第39條）。"], "refs": [193, 191, 43]}, {"id": "s14", "title": "刑案／社維法案件管轄劃分（場站、車廂、綠帶、站外停車場）", "tag": "轄區權責", "summary": "機場捷運系統場站、綠帶、廠站（機廠）、商場及停車場內之刑事、社會秩序維護法案件及意外事故（含道路交通事故），以轄區警察機關為管轄；移動車廂內發生之案件，以被害人下車停靠站之轄區警察機關為管轄。", "steps": ["先確認案發地點類型：場站／綠帶／停車場 → 轄區警察機關管轄；移動車廂 → 以被害人下車站之轄區警察機關管轄。", "捷運警察隊受理無嫌犯、無現場案件時，應依單一窗口規定作紀錄，並通報轄區警察機關後續處理。", "查獲現場涉案人時，捷運警察隊先行初步處理（封鎖、扣證、蒐證），再移由轄區警察機關接續偵辦。", "轄區警察機關接獲移送案件後，應將處理情形副知捷運警察隊建檔統計。", "案件管轄有爭議時，報請共同之直接上級機關決定。"], "refs": [192, 193, 196]}, {"id": "s15", "title": "捷運場站、車廂、隧道發現爆裂物", "tag": "重大事故", "summary": "機場捷運系統場站、車廂、隧道（涵管）及所屬停車場發現爆裂物時，由捷運警察隊負責現場封鎖、警戒及旅客疏散，並通知內政部警政署刑事警察局偵查第五大隊及轄區警察機關派員至現場處理。", "steps": ["立即現場封鎖、警戒，疏散旅客，通報捷運公司配合停止相關設施運作。", "通知內政部警政署刑事警察局偵查第五大隊及轄區警察機關派員處理。", "重大事故或突發事件時，向轄區警察機關通報請求支援，並受當地分局長或航空警察局保安警察大隊大隊長指揮。"], "refs": [193, 194]}, {"id": "s16", "title": "旅客遺失物處理", "tag": "旅客服務", "summary": "車站、車廂內拾得遺失物，交由捷運公司詢問處或遺失物處理中心點驗處理；車站、車廂以外所有人不明之遺失物，由拾得人自行交由警察機關依法處理。", "steps": ["確認拾獲地點：車站／車廂內 → 交捷運公司詢問處或遺失物處理中心。", "車站、車廂以外（如站外、街道）拾得且所有人不明者 → 依法交由警察機關處理（適用遺失物拾得相關規定）。", "如遺失物已腐爛、產生惡臭等影響環境衛生，捷運公司得自行處理。"], "refs": [293, 294, 295, 297]}, {"id": "s17", "title": "未經許可攜帶動物進入站區／車輛", "tag": "票務", "summary": "未經許可攜帶動物進入站區或車輛內，依大眾捷運法第50條處1,500–7,500元罰鍰。動物須裝於寵物箱、寵物車、小籠或小容器內，包裝完固，每位購票旅客以攜帶1件為限；警犬、合格導盲犬、導聾犬、肢體輔助犬不在此限。", "steps": ["確認動物是否符合旅客須知規範（裝箱包裝、每人1件等）。", "違反規定者依大眾捷運法第50條第8款舉發，並得會同捷運站、車人員強制其離開。", "屬警犬或合格導盲犬、導聾犬、肢體輔助犬等，依旅客須知例外規定不受限制。"], "refs": [60, 283]}, {"id": "s18", "title": "現行違反社會秩序維護法行為之即時制止與逕行通知到場", "tag": "秩序", "summary": "對於現行違反社會秩序維護法之行為人，警察人員得即時制止其行為，並得逕行通知到場；其不服通知者，得強制其到場。但確悉其姓名、住所或居所而無逃亡之虞者，得改依通知程序辦理。", "steps": ["確認行為屬現行違反社會秩序維護法之行為。", "依社維法第42條即時制止行為，並逕行通知到場。", "不服通知者得強制其到場；如已確悉身分且無逃亡之虞，得依第41條通知程序辦理，給予申辯機會。", "情節輕微事實明確之案件，得依第44條不經通知、訊問逕行處分（限1,500元以下罰鍰或申誡）。"], "refs": [107, 106, 109]}, {"id": "s19", "title": "非大眾捷運人員進入路線、隧道等非供公眾通行處所", "tag": "行車安全", "summary": "非大眾捷運系統之車輛或人員不得進入捷運系統路線、橋樑、隧道、涵管內及站區內非供公眾通行之處所；違反者依大眾捷運法第50條第3款處1,500–7,500元罰鍰。", "steps": ["制止並告知違反大眾捷運法第44條第2項及第50條第3款規定。", "查明進入動機（如追逐、輕生、竊佔等），必要時依警職法查證身分或依社維法、刑法相關規定併同處理。", "會同捷運公司站、車人員將其帶離管制區域，並確保行車安全。"], "refs": [49, 60]}, {"id": "s20", "title": "案件管轄有爭議時的處理方式", "tag": "轄區權責", "summary": "捷運警察隊與轄區警察機關因案件管轄發生爭議時，報請共同之直接上級機關決定之。", "steps": ["先依要點第四點責任區劃分原則初步判斷管轄歸屬（場站/綠帶/停車場屬轄區警察機關；移動車廂依被害人下車站判斷）。", "如仍有爭議，報請雙方共同之直接上級機關決定管轄。"], "refs": [192, 196]}]</script>
+
+<script>
+const ARTICLES = JSON.parse(document.getElementById('lawdata').textContent);
+const SCENARIOS = JSON.parse(document.getElementById('scenariodata').textContent);
+const ART_BY_ID = {};
+ARTICLES.forEach(a => ART_BY_ID[a.id] = a);
+
+const LAW_META = {
+  '大眾捷運法':        {short:'捷運法', dot:'dot-mrt', icon:'mrt', emoji:'🚇'},
+  '社會秩序維護法':      {short:'社維法', dot:'dot-sw',  icon:'sw',  emoji:'⚖️'},
+  '警察職權行使法':      {short:'警職法', dot:'dot-pj',  icon:'pj',  emoji:'🛡️'},
+  '桃園市政府警察局捷運警察隊與轄區警察機關權責劃分及聯繫要點': {short:'轄區要點', dot:'dot-yd', icon:'yd', emoji:'🗺️'},
+  '桃園大眾捷運系統旅客須知': {short:'旅客須知', dot:'dot-xz', icon:'xz', emoji:'🎫'},
+};
+const LAW_ORDER = ['大眾捷運法','社會秩序維護法','警察職權行使法','桃園市政府警察局捷運警察隊與轄區警察機關權責劃分及聯繫要點','桃園大眾捷運系統旅客須知'];
+
+let activeLawFilter = 'all';
+let favorites = [];
+try{ favorites = JSON.parse(localStorage.getItem('jw_favorites')||'[]'); }catch(e){ favorites = []; }
+function saveFavs(){ localStorage.setItem('jw_favorites', JSON.stringify(favorites)); }
+function isFav(id){ return favorites.includes(id); }
+function toggleFav(id){
+  const i = favorites.indexOf(id);
+  if(i>=0) favorites.splice(i,1); else favorites.unshift(id);
+  saveFavs();
+}
+
+/* ---------- lawfilters chips ---------- */
+const lawfiltersEl = document.getElementById('lawfilters');
+function renderChips(){
+  let html = `<div class="chip ${activeLawFilter==='all'?'active':''}" data-law="all">全部</div>`;
+  LAW_ORDER.forEach(law=>{
+    const m = LAW_META[law];
+    html += `<div class="chip ${activeLawFilter===law?'active':''}" data-law="${escapeAttr(law)}">${m.short}</div>`;
+  });
+  lawfiltersEl.innerHTML = html;
+  lawfiltersEl.querySelectorAll('.chip').forEach(c=>{
+    c.addEventListener('click', ()=>{
+      activeLawFilter = c.dataset.law;
+      renderChips();
+      runSearch();
+    });
+  });
+}
+renderChips();
+
+/* ---------- helpers ---------- */
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escapeAttr(s){ return escapeHtml(s); }
+function highlight(text, q){
+  if(!q) return escapeHtml(text);
+  const esc = escapeHtml(text);
+  const qEsc = escapeHtml(q).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  try{
+    return esc.replace(new RegExp(qEsc,'gi'), m=>`<mark>${m}</mark>`);
+  }catch(e){ return esc; }
+}
+function snippetAround(text, q, len=90){
+  if(!q) return text.slice(0,len);
+  const idx = text.toLowerCase().indexOf(q.toLowerCase());
+  if(idx<0) return text.slice(0,len);
+  const start = Math.max(0, idx-20);
+  return (start>0?'…':'') + text.slice(start, start+len) + (start+len<text.length?'…':'');
+}
+
+/* ---------- SEARCH VIEW ---------- */
+const searchInput = document.getElementById('searchInput');
+const searchbarEl = document.getElementById('searchbar');
+const clearBtn = document.getElementById('clearBtn');
+const resultsWrap = document.getElementById('searchResultsWrap');
+
+function runSearch(){
+  const q = searchInput.value.trim();
+  searchbarEl.classList.toggle('has-text', q.length>0);
+
+  let pool = ARTICLES;
+  if(activeLawFilter !== 'all'){
+    pool = pool.filter(a=>a.law===activeLawFilter);
+  }
+
+  if(!q){
+    if(activeLawFilter==='all'){
+      resultsWrap.innerHTML = `
+        <div class="empty-state">
+          <div class="icon">🔎</div>
+          <p>輸入關鍵字搜尋 5 部法規／要點全文<br>例如「無票」「查證身分」「扣留」「爆裂物」「管轄」</p>
+        </div>`;
+      return;
+    }
+    // show all of that law's articles, grouped simply
+    renderArticleList(pool.slice(0,60), '');
+    return;
+  }
+
+  const qLower = q.toLowerCase();
+  const scored = pool.map(a=>{
+    const hay = (a.title + ' ' + a.content).toLowerCase();
+    let score = -1;
+    if(hay.includes(qLower)){
+      score = a.title.toLowerCase().includes(qLower) ? 2 : 1;
+    }
+    return {a, score};
+  }).filter(x=>x.score>=0).sort((x,y)=>y.score-x.score);
+
+  if(scored.length===0){
+    resultsWrap.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">🗂️</div>
+        <p>找不到「${escapeHtml(q)}」相關條文<br>可換個關鍵字，或至「情境快答」查看常見情況</p>
+      </div>`;
+    return;
+  }
+  renderArticleList(scored.map(x=>x.a), q);
+}
+
+function renderArticleList(list, q){
+  let html = `<div class="section-label">${q? `搜尋結果　共 ${list.length} 筆` : `共 ${list.length} 筆條文`}</div><div class="art-list">`;
+  list.forEach(a=>{
+    const meta = LAW_META[a.law] || {short:a.law, dot:'dot-mrt'};
+    html += `
+      <div class="art-card" data-id="${a.id}">
+        <div class="art-top">
+          <span class="lawdot ${meta.dot}"></span>
+          <span class="art-lawname">${escapeHtml(meta.short)}${a.chapter? ' · '+escapeHtml(a.chapter.replace(/^第\s*/,'').replace(/\s*章$/,'').replace(/\s*編$/,'')) : ''}</span>
+          <span class="art-num">${escapeHtml(a.title)}</span>
+        </div>
+        <div class="art-snippet">${highlight(snippetAround(a.content, q), q)}</div>
+      </div>`;
+  });
+  html += `</div>`;
+  resultsWrap.innerHTML = html;
+  resultsWrap.querySelectorAll('.art-card').forEach(el=>{
+    el.addEventListener('click', ()=>openArticleSheet(parseInt(el.dataset.id), q));
+  });
+}
+
+searchInput.addEventListener('input', runSearch);
+clearBtn.addEventListener('click', ()=>{ searchInput.value=''; runSearch(); searchInput.focus(); });
+
+/* ---------- SCENARIO VIEW ---------- */
+const scenarioGrid = document.getElementById('scenarioGrid');
+function renderScenarios(){
+  let html = '';
+  SCENARIOS.forEach(s=>{
+    html += `
+      <div class="scenario-card" data-id="${s.id}">
+        <div class="tagrow"><span class="tagpill">${escapeHtml(s.tag)}</span></div>
+        <h3>${escapeHtml(s.title)}</h3>
+        <p class="desc">${escapeHtml(s.summary)}</p>
+        <span class="chev">›</span>
+      </div>`;
+  });
+  scenarioGrid.innerHTML = html;
+  scenarioGrid.querySelectorAll('.scenario-card').forEach(el=>{
+    el.addEventListener('click', ()=>openScenarioSheet(el.dataset.id));
+  });
+}
+renderScenarios();
+
+/* ---------- BROWSE VIEW ---------- */
+const lawGroupsEl = document.getElementById('lawGroups');
+function renderBrowse(){
+  let html = '';
+  LAW_ORDER.forEach(law=>{
+    const meta = LAW_META[law];
+    const arts = ARTICLES.filter(a=>a.law===law);
+    // group by chapter preserving order of first appearance
+    const chapters = [];
+    const chapMap = {};
+    arts.forEach(a=>{
+      const key = a.chapter || '';
+      if(!(key in chapMap)){ chapMap[key]=[]; chapters.push(key); }
+      chapMap[key].push(a);
+    });
+    html += `<div class="law-group" data-law="${escapeAttr(law)}">
+      <div class="law-group-head">
+        <div class="law-icon ${meta.icon}">${meta.emoji}</div>
+        <div class="info">
+          <h3>${escapeHtml(law)}</h3>
+          <div class="cnt">${arts.length} 則條文</div>
+        </div>
+        <div class="arrow">›</div>
+      </div>
+      <div class="law-group-body">`;
+    chapters.forEach(ch=>{
+      html += `<div class="chapter-block">`;
+      if(ch) html += `<div class="chapter-title">${escapeHtml(ch)}</div>`;
+      chapMap[ch].forEach(a=>{
+        html += `<div class="mini-art" data-id="${a.id}">
+          <span class="n">${escapeHtml(a.title.replace(/^第\s*/,'').replace(/\s*條$/,'').replace(/\s*點$/,''))}</span>
+          <span class="t">${escapeHtml(a.content.split('\n')[0])}</span>
+        </div>`;
+      });
+      html += `</div>`;
+    });
+    html += `</div></div>`;
+  });
+  lawGroupsEl.innerHTML = html;
+
+  lawGroupsEl.querySelectorAll('.law-group-head').forEach(head=>{
+    head.addEventListener('click', ()=>{
+      head.parentElement.classList.toggle('open');
+    });
+  });
+  lawGroupsEl.querySelectorAll('.mini-art').forEach(el=>{
+    el.addEventListener('click', (ev)=>{
+      ev.stopPropagation();
+      openArticleSheet(parseInt(el.dataset.id), '');
+    });
+  });
+}
+renderBrowse();
+
+/* ---------- FAVORITES VIEW ---------- */
+const favListEl = document.getElementById('favList');
+function renderFavs(){
+  if(favorites.length===0){
+    favListEl.innerHTML = `
+      <div class="fav-empty">
+        <div class="icon">☆</div>
+        <p>尚未收藏條文<br>瀏覽條文時點右上角「☆」即可加入收藏，<br>方便執勤時快速查閱</p>
+      </div>`;
+    return;
+  }
+  const list = favorites.map(id=>ART_BY_ID[id]).filter(Boolean);
+  renderInto(favListEl, list);
+}
+function renderInto(container, list){
+  let html = `<div class="art-list">`;
+  list.forEach(a=>{
+    const meta = LAW_META[a.law] || {short:a.law, dot:'dot-mrt'};
+    html += `
+      <div class="art-card" data-id="${a.id}">
+        <div class="art-top">
+          <span class="lawdot ${meta.dot}"></span>
+          <span class="art-lawname">${escapeHtml(meta.short)}</span>
+          <span class="art-num">${escapeHtml(a.title)}</span>
+        </div>
+        <div class="art-title" style="margin-top:6px;">${escapeHtml(a.content.split('\n')[0]).slice(0,60)}</div>
+      </div>`;
+  });
+  html += `</div>`;
+  container.innerHTML = html;
+  container.querySelectorAll('.art-card').forEach(el=>{
+    el.addEventListener('click', ()=>openArticleSheet(parseInt(el.dataset.id), ''));
+  });
+}
+
+/* ---------- SHEET (article / scenario detail) ---------- */
+const sheet = document.getElementById('sheet');
+const backdrop = document.getElementById('backdrop');
+const sheetLawname = document.getElementById('sheetLawname');
+const sheetTitle = document.getElementById('sheetTitle');
+const sheetBody = document.getElementById('sheetBody');
+const sheetFavBtn = document.getElementById('sheetFavBtn');
+const sheetClose = document.getElementById('sheetClose');
+
+let currentSheetArticleId = null;
+
+function openArticleSheet(id, q){
+  const a = ART_BY_ID[id];
+  if(!a) return;
+  currentSheetArticleId = id;
+  const meta = LAW_META[a.law] || {short:a.law};
+  sheetLawname.textContent = `${meta.short}${a.chapter? ' · '+a.chapter : ''}`;
+  sheetTitle.innerHTML = highlight(a.title, q);
+  sheetBody.innerHTML = `<div class="content">${highlight(a.content, q)}</div>`;
+  sheetFavBtn.style.display = 'flex';
+  sheetFavBtn.classList.toggle('active', isFav(id));
+  sheetFavBtn.textContent = isFav(id) ? '★' : '☆';
+  showSheet();
+}
+
+function openScenarioSheet(sid){
+  const s = SCENARIOS.find(x=>x.id===sid);
+  if(!s) return;
+  currentSheetArticleId = null;
+  sheetLawname.textContent = s.tag + ' · 情境快答';
+  sheetTitle.textContent = s.title;
+  sheetFavBtn.style.display = 'none';
+
+  let html = `<div class="scenario-detail">
+    <div class="summary">${escapeHtml(s.summary)}</div>
+    <ol class="steps">`;
+  s.steps.forEach(st=> html += `<li>${escapeHtml(st)}</li>`);
+  html += `</ol>`;
+  if(s.refs && s.refs.length){
+    html += `<div class="reflist-label">相關條文</div><div class="ref-chip-list">`;
+    s.refs.forEach(rid=>{
+      const a = ART_BY_ID[rid];
+      if(!a) return;
+      const meta = LAW_META[a.law] || {short:a.law};
+      html += `<div class="ref-chip" data-id="${a.id}">
+        <span class="n">${escapeHtml(meta.short)}</span>
+        <span class="t">${escapeHtml(a.title)} — ${escapeHtml(a.content.split('\n')[0]).slice(0,26)}</span>
+        <span class="go">›</span>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+  html += `</div>`;
+  sheetBody.innerHTML = html;
+  sheetBody.querySelectorAll('.ref-chip').forEach(el=>{
+    el.addEventListener('click', ()=> openArticleSheet(parseInt(el.dataset.id), ''));
+  });
+  showSheet();
+}
+
+function showSheet(){
+  backdrop.classList.add('show');
+  sheet.classList.add('show');
+  sheetBody.scrollTop = 0;
+}
+function hideSheet(){
+  backdrop.classList.remove('show');
+  sheet.classList.remove('show');
+}
+backdrop.addEventListener('click', hideSheet);
+sheetClose.addEventListener('click', hideSheet);
+sheetFavBtn.addEventListener('click', ()=>{
+  if(currentSheetArticleId===null) return;
+  toggleFav(currentSheetArticleId);
+  sheetFavBtn.classList.toggle('active', isFav(currentSheetArticleId));
+  sheetFavBtn.textContent = isFav(currentSheetArticleId) ? '★' : '☆';
+  if(document.getElementById('view-fav').classList.contains('active')) renderFavs();
+});
+
+/* ---------- TAB NAV ---------- */
+const tabButtons = document.querySelectorAll('nav.tabbar button');
+const views = {
+  search: document.getElementById('view-search'),
+  scenario: document.getElementById('view-scenario'),
+  browse: document.getElementById('view-browse'),
+  fav: document.getElementById('view-fav'),
+};
+tabButtons.forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    tabButtons.forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    Object.values(views).forEach(v=>v.classList.remove('active'));
+    const key = btn.dataset.view;
+    views[key].classList.add('active');
+    document.getElementById('mainScroll').scrollTop = 0;
+    if(key==='fav') renderFavs();
+  });
+});
+
+/* init */
+views.search.classList.add('active');
+runSearch();
+</script>
+</body>
+</html>
