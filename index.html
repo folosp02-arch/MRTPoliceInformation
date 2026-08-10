@@ -342,6 +342,48 @@ nav.tabbar button.active{color:var(--gold);}
 @media (max-width:340px){
   .brand h1{font-size:15px;}
 }
+
+/* ---------- OFFLINE AI ASSISTANT ---------- */
+.ai-view{height:100%;display:none;overflow:hidden;}
+body.ai-mode .searchbar, body.ai-mode .lawfilters{display:none;}
+body.ai-mode main{padding:0 0 calc(70px + var(--safe-bottom));overflow:hidden;}
+.ai-view.active{display:flex;flex-direction:column;}
+.ai-shell{height:100%;display:flex;flex-direction:column;max-width:900px;margin:0 auto;width:100%;}
+.ai-head{padding:18px 16px 10px;display:flex;align-items:center;gap:11px;}
+.ai-avatar{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,#c9a227,#8d6b12);color:#fff;display:grid;place-items:center;font-size:22px;box-shadow:0 5px 18px rgba(0,0,0,.18);flex:none;}
+.ai-head h2{margin:0;font-size:18px;color:var(--ink);}
+.ai-head p{margin:3px 0 0;color:var(--ink-faint);font-size:11px;line-height:1.45;}
+.ai-status{margin-left:auto;font-size:10px;color:#4f8b5b;border:1px solid rgba(79,139,91,.25);background:rgba(79,139,91,.08);padding:5px 8px;border-radius:999px;white-space:nowrap;}
+.ai-chat{flex:1;overflow:auto;padding:8px 14px 14px;scroll-behavior:smooth;}
+.ai-msg{display:flex;gap:9px;margin:10px 0;align-items:flex-start;}
+.ai-msg.user{justify-content:flex-end;}
+.ai-msg.user .ai-bubble{background:var(--gold);color:#fff;border-radius:18px 18px 5px 18px;max-width:82%;}
+.ai-msg.assistant .ai-bubble{background:var(--card);border:1px solid var(--line);color:var(--ink);border-radius:5px 18px 18px 18px;max-width:92%;box-shadow:0 2px 10px rgba(0,0,0,.04);}
+.ai-mini-avatar{width:30px;height:30px;border-radius:10px;background:var(--panel);border:1px solid var(--line);display:grid;place-items:center;font-size:15px;flex:none;}
+.ai-bubble{padding:11px 13px;font-size:13px;line-height:1.7;word-break:break-word;}
+.ai-bubble p{margin:0 0 7px}.ai-bubble p:last-child{margin-bottom:0}
+.ai-section-title{font-weight:800;font-size:12px;margin:9px 0 5px;color:var(--gold);}
+.ai-law-card{border:1px solid var(--line);background:var(--panel);border-radius:11px;padding:9px 10px;margin:6px 0;cursor:pointer;}
+.ai-law-card:hover{border-color:var(--gold);}
+.ai-law-card .top{display:flex;justify-content:space-between;gap:8px;font-weight:700;font-size:11px;color:var(--ink);}
+.ai-law-card .text{margin-top:4px;font-size:11px;color:var(--ink-faint);line-height:1.55;}
+.ai-step{display:flex;gap:7px;margin:4px 0;font-size:12px;}
+.ai-step b{width:20px;height:20px;border-radius:50%;background:rgba(201,162,39,.14);color:var(--gold);display:grid;place-items:center;flex:none;font-size:10px;}
+.ai-note{font-size:10px;color:var(--ink-faint);border-top:1px dashed var(--line);margin-top:9px;padding-top:7px;line-height:1.55;}
+.ai-suggestions{display:flex;gap:7px;overflow:auto;padding:0 14px 8px;scrollbar-width:none;}
+.ai-suggestions::-webkit-scrollbar{display:none}
+.ai-suggestion{flex:none;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:7px 10px;font-size:11px;cursor:pointer;}
+.ai-suggestion:hover{border-color:var(--gold);color:var(--gold);}
+.ai-composer{padding:8px 12px calc(10px + var(--safe-bottom));background:var(--bg);border-top:1px solid var(--line);}
+.ai-input-wrap{display:flex;align-items:flex-end;gap:7px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:7px 7px 7px 12px;box-shadow:0 4px 18px rgba(0,0,0,.05);}
+#aiInput{flex:1;border:0;outline:0;background:transparent;color:var(--ink);font:inherit;font-size:13px;resize:none;min-height:24px;max-height:110px;line-height:1.5;}
+#aiInput::placeholder{color:var(--ink-faint);}
+#aiSend{width:36px;height:36px;border:0;border-radius:12px;background:var(--gold);color:#fff;cursor:pointer;font-size:16px;flex:none;}
+#aiSend:disabled{opacity:.45;cursor:default;}
+.ai-typing{display:inline-flex;gap:4px;align-items:center}.ai-typing i{width:5px;height:5px;border-radius:50%;background:var(--ink-faint);animation:aiDot 1s infinite}.ai-typing i:nth-child(2){animation-delay:.15s}.ai-typing i:nth-child(3){animation-delay:.3s}
+@keyframes aiDot{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+@media (min-width:700px){.ai-chat{padding-left:30px;padding-right:30px}.ai-composer{padding-left:30px;padding-right:30px}.ai-suggestions{padding-left:30px;padding-right:30px}}
+
 </style>
 </head>
 <body>
@@ -366,6 +408,33 @@ nav.tabbar button.active{color:var(--gold);}
 </header>
 
 <main id="mainScroll">
+
+  <!-- OFFLINE AI ASSISTANT VIEW -->
+  <section class="ai-view" id="view-ai">
+    <div class="ai-shell">
+      <div class="ai-head">
+        <div class="ai-avatar">👮</div>
+        <div>
+          <h2>iMetroCop AI 法規助理</h2>
+          <p>離線智慧問答・僅依本頁內建法規與情境資料回答</p>
+        </div>
+        <div class="ai-status">● 離線模式</div>
+      </div>
+      <div class="ai-chat" id="aiChat"></div>
+      <div class="ai-suggestions" id="aiSuggestions">
+        <button class="ai-suggestion">旅客在車廂喝酒又鬧事怎麼處理？</button>
+        <button class="ai-suggestion">有人在月台打架，我可以管束嗎？</button>
+        <button class="ai-suggestion">遇到危險物品可以扣留嗎？</button>
+        <button class="ai-suggestion">什麼情況可以查證身分？</button>
+      </div>
+      <div class="ai-composer">
+        <div class="ai-input-wrap">
+          <textarea id="aiInput" rows="1" placeholder="直接描述勤務情境，例如：有人在A8站喝醉後一直罵人…"></textarea>
+          <button id="aiSend" aria-label="送出">➤</button>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <!-- SEARCH / HOME VIEW -->
   <section class="view" id="view-search">
@@ -393,6 +462,7 @@ nav.tabbar button.active{color:var(--gold);}
 </main>
 
 <nav class="tabbar">
+  <button data-view="ai"><span class="ic">🤖</span><span class="lb">AI助理</span></button>
   <button data-view="search" class="active"><span class="ic">🔍</span><span class="lb">搜尋</span></button>
   <button data-view="scenario"><span class="ic">⚡</span><span class="lb">情境快答</span></button>
   <button data-view="browse"><span class="ic">📚</span><span class="lb">法規瀏覽</span></button>
@@ -975,9 +1045,148 @@ sheetFavBtn.addEventListener('click', ()=>{
   if(document.getElementById('view-fav').classList.contains('active')) renderFavs();
 });
 
+/* ---------- OFFLINE AI ASSISTANT ---------- */
+const aiChat = document.getElementById('aiChat');
+const aiInput = document.getElementById('aiInput');
+const aiSend = document.getElementById('aiSend');
+const aiSuggestions = document.getElementById('aiSuggestions');
+
+const AI_INTENTS = [
+  {keys:['無票','逃票','車票失效','失效車票','冒用車票','不付錢'], scenario:'s01'},
+  {keys:['喝酒','喝醉','醉漢','酗酒','酒醉','罵人','謾罵','喧鬧'], scenario:'s02'},
+  {keys:['打架','鬥毆','互毆','打人','施暴','暴行','推人','互打'], scenario:'s03'},
+  {keys:['刀','刀械','凶器','危險物','危險品','爆裂物','炸彈','易燃','爆炸'], scenario:'s04'},
+  {keys:['軌道','警戒線','黃線','跨越','電扶梯逆向','奔跑'], scenario:'s05'},
+  {keys:['破壞捷運','破壞設施','竊佔','入侵系統','資通系統','機房'], scenario:'s06'},
+  {keys:['乞討','叫化','性交易','拉客'], scenario:'s07'},
+  {keys:['罵警察','罵員警','妨礙執法','妨害公務','聚眾喧嘩'], scenario:'s08'},
+  {keys:['查身分','查證身分','身分查證','證件','可疑'], scenario:'s09'},
+  {keys:['管束','自殺','喝醉躺','酒醉危險','暴行鬥毆'], scenario:'s10'},
+  {keys:['扣留','扣押危險物','扣危險物','凶器扣留'], scenario:'s11'},
+  {keys:['集會','遊行'], scenario:'s12'},
+  {keys:['行車事故','列車事故','意外','撞車','脫軌'], scenario:'s13'},
+  {keys:['管轄','哪個分局','哪個單位','轄區','案件管轄'], scenario:'s14'},
+  {keys:['爆裂物','炸彈','可疑包裹'], scenario:'s15'},
+  {keys:['遺失物','拾得物','撿到東西','失物'], scenario:'s16'},
+  {keys:['寵物','狗','貓','動物'], scenario:'s17'},
+  {keys:['現行','立即制止','逕行通知','通知到場','強制到場'], scenario:'s18'},
+  {keys:['進入隧道','進入軌道','非供公眾通行','進入路線'], scenario:'s19'},
+  {keys:['管轄爭議','管轄有爭議'], scenario:'s20'}
+];
+
+function aiEscape(s){ return escapeHtml(String(s||'')); }
+function aiFindScenarios(q){
+  const ql=q.toLowerCase();
+  const scored=[];
+  AI_INTENTS.forEach((it,idx)=>{
+    let score=0;
+    it.keys.forEach(k=>{ if(ql.includes(k.toLowerCase())) score += k.length>=3 ? 3 : 2; });
+    if(score) scored.push({id:it.scenario,score,idx});
+  });
+  return scored.sort((a,b)=>b.score-a.score).slice(0,3).map(x=>SCENARIOS.find(s=>s.id===x.id)).filter(Boolean);
+}
+function aiSearchArticles(q){
+  let terms=[q];
+  try{ terms=terms.concat(getSynonymTerms(q)); }catch(e){}
+  const unique=[...new Set(terms.map(x=>x.toLowerCase()).filter(Boolean))];
+  return ARTICLES.map(a=>{
+    const hay=(a.title+' '+a.content+' '+a.law+' '+(a.chapter||'')).toLowerCase();
+    let score=0, hits=[];
+    unique.forEach(t=>{
+      if(hay.includes(t)){
+        score += t===q.toLowerCase()?5:2;
+        hits.push(t);
+      }
+    });
+    // Give extra weight to direct short intent words in the question.
+    q.split(/[^\u4e00-\u9fffA-Za-z0-9]+/).filter(x=>x.length>=2).forEach(t=>{
+      if(hay.includes(t.toLowerCase())) score+=2;
+    });
+    return {a,score,hits};
+  }).filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0,5);
+}
+function aiAddMessage(role,html){
+  const row=document.createElement('div'); row.className='ai-msg '+role;
+  if(role==='assistant') row.innerHTML='<div class="ai-mini-avatar">👮</div><div class="ai-bubble">'+html+'</div>';
+  else row.innerHTML='<div class="ai-bubble">'+html+'</div>';
+  aiChat.appendChild(row); aiChat.scrollTop=aiChat.scrollHeight;
+  return row;
+}
+function aiTyping(){
+  return aiAddMessage('assistant','<div class="ai-typing"><i></i><i></i><i></i></div>');
+}
+function aiArticleCard(x){
+  const a=x.a, meta=LAW_META[a.law]||{short:a.law};
+  return `<div class="ai-law-card" data-id="${a.id}"><div class="top"><span>${aiEscape(meta.short)}</span><span>${aiEscape(a.title)}</span></div><div class="text">${aiEscape(a.content).slice(0,150)}${a.content.length>150?'…':''}</div></div>`;
+}
+function aiRenderAnswer(q){
+  const scenarios=aiFindScenarios(q);
+  const articles=aiSearchArticles(q);
+  let html='';
+
+  if(!scenarios.length && !articles.length){
+    return `<p>我目前在<strong>離線模式</strong>下，只能依這個網頁內建的法規與情境資料回答。</p>
+      <p>目前找不到與「${aiEscape(q)}」足夠相關的資料。可以試著把情境說得更具體，例如「喝醉鬧事」、「月台打架」、「查證身分」、「扣留危險物品」。</p>
+      <div class="ai-note">⚠️ 本版本不是連線型生成式 AI；答案是依內建資料進行關鍵字、同義詞及情境比對後整理。</div>`;
+  }
+
+  html += `<p>依你描述的情況，我先從目前內建的<strong>捷警法規與勤務情境資料</strong>找出最接近的規定。</p>`;
+
+  if(scenarios.length){
+    const s=scenarios[0];
+    html += `<div class="ai-section-title">🚔 建議優先參考的勤務情境</div>`;
+    html += `<p><strong>${aiEscape(s.title)}</strong><br>${aiEscape(s.summary)}</p>`;
+    if(s.steps && s.steps.length){
+      html += `<div class="ai-section-title">處置重點</div>`;
+      s.steps.slice(0,6).forEach((st,i)=> html += `<div class="ai-step"><b>${i+1}</b><span>${aiEscape(st)}</span></div>`);
+    }
+    if(s.refs && s.refs.length){
+      const refs=s.refs.map(id=>ART_BY_ID[id]).filter(Boolean).slice(0,4);
+      if(refs.length){
+        html += `<div class="ai-section-title">📚 情境所列相關條文</div>`;
+        refs.forEach(a=> html += aiArticleCard({a}));
+      }
+    }
+  }
+
+  const filtered=articles.filter(x=>!scenarios.length || true).slice(0,4);
+  if(filtered.length){
+    html += `<div class="ai-section-title">⚖️ 相關法規原文</div>`;
+    filtered.forEach(x=> html += aiArticleCard(x));
+  }
+
+  if(scenarios.length>1){
+    html += `<div class="ai-section-title">🔎 其他可能相關情境</div><p>${scenarios.slice(1).map(s=>`「${aiEscape(s.title)}」`).join('、')}</p>`;
+  }
+  html += `<div class="ai-note">⚠️ 本回答僅依本頁目前內建資料整理，沒有連線查詢最新法規，也不取代正式法律意見或勤務指揮；如涉及具體案件，仍應以最新法令、勤務規範及長官指示為準。</div>`;
+  return html;
+}
+function aiAsk(q){
+  q=q.trim(); if(!q) return;
+  aiAddMessage('user',aiEscape(q).replace(/\n/g,'<br>'));
+  aiSend.disabled=true; aiInput.disabled=true;
+  const t=aiTyping();
+  setTimeout(()=>{
+    t.remove();
+    const msg=aiAddMessage('assistant',aiRenderAnswer(q));
+    msg.querySelectorAll('.ai-law-card').forEach(el=>el.addEventListener('click',()=>openArticleSheet(parseInt(el.dataset.id),'') ));
+    aiSend.disabled=false; aiInput.disabled=false; aiInput.focus();
+  },280);
+}
+function aiWelcome(){
+  aiChat.innerHTML='';
+  aiAddMessage('assistant',`<p><strong>你好，我是 iMetroCop AI 法規助理。</strong></p><p>你不用再想「要搜尋哪個關鍵字」，直接把現場情況告訴我即可。</p><p>例如：<br>「有人在月台喝醉一直罵人，我可以管束嗎？」<br>「旅客在車廂打架要怎麼處理？」<br>「發現疑似危險物品可以扣留嗎？」</p><div class="ai-note">🟢 離線版：不需要網路、不需要 API、不需要後端。所有回答都從這份網頁內建資料產生。</div>`);
+}
+aiSend.addEventListener('click',()=>{const q=aiInput.value; aiInput.value=''; aiInput.style.height='auto'; aiAsk(q);});
+aiInput.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();aiSend.click();}});
+aiInput.addEventListener('input',()=>{aiInput.style.height='auto';aiInput.style.height=Math.min(aiInput.scrollHeight,110)+'px';});
+aiSuggestions.querySelectorAll('.ai-suggestion').forEach(btn=>btn.addEventListener('click',()=>{aiInput.value=btn.textContent;aiSend.click();}));
+aiWelcome();
+
 /* ---------- TAB NAV ---------- */
 const tabButtons = document.querySelectorAll('nav.tabbar button');
 const views = {
+  ai: document.getElementById('view-ai'),
   search: document.getElementById('view-search'),
   scenario: document.getElementById('view-scenario'),
   browse: document.getElementById('view-browse'),
@@ -991,6 +1200,7 @@ tabButtons.forEach(btn=>{
     const key = btn.dataset.view;
     views[key].classList.add('active');
     document.getElementById('mainScroll').scrollTop = 0;
+    document.body.classList.toggle('ai-mode', key==='ai');
     if(key==='fav') renderFavs();
   });
 });
@@ -1011,7 +1221,10 @@ themeToggle.addEventListener('click', ()=>{
 });
 
 /* init */
-views.search.classList.add('active');
+views.ai.classList.add('active');
+tabButtons.forEach(b=>b.classList.remove('active'));
+document.querySelector('nav.tabbar button[data-view="ai"]').classList.add('active');
+document.body.classList.add('ai-mode');
 runSearch();
 </script>
 </body>
