@@ -359,23 +359,9 @@ body.ai-mode main{padding:0 0 calc(70px + var(--safe-bottom));overflow:hidden;}
 .ai-msg{display:flex;gap:9px;margin:10px 0;align-items:flex-start;}
 .ai-msg.user{justify-content:flex-end;}
 .ai-msg.user .ai-bubble{background:var(--gold);color:#fff;border-radius:18px 18px 5px 18px;max-width:82%;}
-.ai-msg.assistant{align-items:flex-start;}
-.ai-msg.assistant .ai-bubble{background:var(--card);border:1px solid var(--line);color:var(--ink);border-radius:5px 18px 18px 18px;max-width:calc(100% - 42px);width:min(96%,760px);box-shadow:0 2px 10px rgba(0,0,0,.04);position:relative;}
+.ai-msg.assistant .ai-bubble{background:var(--card);border:1px solid var(--line);color:var(--ink);border-radius:5px 18px 18px 18px;max-width:92%;box-shadow:0 2px 10px rgba(0,0,0,.04);}
 .ai-mini-avatar{width:30px;height:30px;border-radius:10px;background:var(--panel);border:1px solid var(--line);display:grid;place-items:center;font-size:15px;flex:none;}
-.ai-bubble{padding:15px 16px;font-size:15px;line-height:1.9;word-break:break-word;}
-.ai-bubble p{margin:0 0 10px}.ai-bubble p:last-child{margin-bottom:0}
-.ai-read-btn{display:flex;align-items:center;gap:5px;margin:12px 0 0 auto;border:1px solid var(--line);background:var(--panel);color:var(--ink-dim);border-radius:10px;padding:6px 10px;font-size:12px;cursor:pointer;}
-.ai-read-btn:hover{border-color:var(--gold);color:var(--ink);background:var(--surface2);}
-.ai-reading-overlay{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.62);display:none;padding:18px;align-items:center;justify-content:center;}
-.ai-reading-overlay.active{display:flex;}
-.ai-reading-card{width:min(960px,100%);height:min(88vh,900px);background:var(--bg);border:1px solid var(--line);border-radius:18px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.35);}
-.ai-reading-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line);background:var(--card);}
-.ai-reading-head strong{font-size:15px;color:var(--ink);}
-.ai-reading-close{border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:10px;padding:6px 10px;cursor:pointer;font-size:13px;}
-.ai-reading-body{overflow:auto;padding:22px 24px 30px;color:var(--ink);font-size:16px;line-height:2;}
-.ai-reading-body .ai-read-btn{display:none;}
-.ai-reading-body .ai-law-card{font-size:14px;}
-.ai-reading-body .ai-law-card .text{font-size:13px;line-height:1.8;}
+.ai-bubble{padding:11px 13px;font-size:13px;line-height:1.7;word-break:break-word;}
 .ai-bubble p{margin:0 0 7px}.ai-bubble p:last-child{margin-bottom:0}
 .ai-section-title{font-weight:800;font-size:12px;margin:9px 0 5px;color:var(--gold);}
 .ai-law-card{border:1px solid var(--line);background:var(--panel);border-radius:11px;padding:9px 10px;margin:6px 0;cursor:pointer;}
@@ -435,17 +421,6 @@ body.ai-mode main{padding:0 0 calc(70px + var(--safe-bottom));overflow:hidden;}
 .ai-mini-action{display:inline-flex;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:6px 9px;margin:5px 4px 0 0;font-size:11px;cursor:pointer}
 @media (min-width:700px){.ai-chat{padding-left:30px;padding-right:30px}.ai-composer{padding-left:30px;padding-right:30px}.ai-suggestions{padding-left:30px;padding-right:30px}}
 
-@media (max-width:600px){
-  .ai-head{padding:12px 12px 8px;}
-  .ai-chat{padding:6px 8px 12px;}
-  .ai-msg{gap:7px;margin:9px 0;}
-  .ai-mini-avatar{width:28px;height:28px;font-size:14px;}
-  .ai-msg.assistant .ai-bubble{max-width:calc(100% - 35px);width:100%;}
-  .ai-bubble{padding:14px 14px;font-size:15px;line-height:1.9;}
-  .ai-reading-overlay{padding:0;}
-  .ai-reading-card{height:100dvh;border-radius:0;border-left:0;border-right:0;}
-  .ai-reading-body{padding:20px 17px calc(28px + var(--safe-bottom));font-size:16px;line-height:2;}
-}
 </style>
 </head>
 <body>
@@ -1279,28 +1254,11 @@ function aiConfidence(scenarios,articles,q){
 
 function aiAddMessage(role,html){
   const row=document.createElement('div'); row.className='ai-msg '+role;
-  if(role==='assistant'){
-    row.innerHTML='<div class="ai-mini-avatar">👮</div><div class="ai-bubble"><div class="ai-answer-content">'+html+'</div><button class="ai-read-btn" type="button">📖 放大閱讀</button></div>';
-    const readBtn=row.querySelector('.ai-read-btn');
-    readBtn.addEventListener('click',()=>aiOpenReading(row.querySelector('.ai-answer-content')));
-  }else row.innerHTML='<div class="ai-bubble">'+html+'</div>';
+  if(role==='assistant') row.innerHTML='<div class="ai-mini-avatar">👮</div><div class="ai-bubble">'+html+'</div>';
+  else row.innerHTML='<div class="ai-bubble">'+html+'</div>';
   aiChat.appendChild(row); aiChat.scrollTop=aiChat.scrollHeight;
   return row;
 }
-
-function aiOpenReading(content){
-  const overlay=document.getElementById('aiReadingOverlay');
-  const body=document.getElementById('aiReadingBody');
-  body.innerHTML=content.innerHTML;
-  overlay.classList.add('active'); overlay.setAttribute('aria-hidden','false');
-  document.body.style.overflow='hidden';
-}
-function aiCloseReading(){
-  const overlay=document.getElementById('aiReadingOverlay');
-  overlay.classList.remove('active'); overlay.setAttribute('aria-hidden','true');
-  document.body.style.overflow='';
-}
-
 function aiTyping(){ return aiAddMessage('assistant','<div class="ai-typing"><i></i><i></i><i></i></div>'); }
 
 function aiArticleCard(x){
@@ -1557,9 +1515,6 @@ aiInput.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preven
 aiInput.addEventListener('input',()=>{aiInput.style.height='auto';aiInput.style.height=Math.min(aiInput.scrollHeight,110)+'px';});
 aiSuggestions.querySelectorAll('.ai-suggestion').forEach(btn=>btn.addEventListener('click',()=>{aiInput.value=btn.textContent;aiSend.click();}));
 aiClear.addEventListener('click',()=>{aiWelcome(); aiInput.value=''; aiToolButtons.forEach(b=>b.classList.remove('active')); aiInput.focus();});
-document.getElementById('aiReadingClose').addEventListener('click',aiCloseReading);
-document.getElementById('aiReadingOverlay').addEventListener('click',e=>{if(e.target.id==='aiReadingOverlay') aiCloseReading();});
-document.addEventListener('keydown',e=>{if(e.key==='Escape') aiCloseReading();});
 aiWelcome();
 
 /* ---------- TAB NAV ---------- */
@@ -1607,11 +1562,5 @@ document.querySelector('nav.tabbar button[data-view="ai"]').classList.add('activ
 document.body.classList.add('ai-mode');
 runSearch();
 </script>
-<div class="ai-reading-overlay" id="aiReadingOverlay" aria-hidden="true">
-  <div class="ai-reading-card" role="dialog" aria-modal="true" aria-label="AI回答閱讀模式">
-    <div class="ai-reading-head"><strong>📖 AI 回答｜閱讀模式</strong><button class="ai-reading-close" id="aiReadingClose" type="button">關閉 ✕</button></div>
-    <div class="ai-reading-body" id="aiReadingBody"></div>
-  </div>
-</div>
 </body>
 </html>
