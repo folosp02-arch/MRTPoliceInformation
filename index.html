@@ -349,19 +349,29 @@ nav.tabbar button.active{color:var(--gold);}
 body.ai-mode .searchbar, body.ai-mode .lawfilters{display:none;}
 body.ai-mode main{padding:0 0 calc(70px + var(--safe-bottom));overflow:hidden;}
 .ai-view.active{display:flex;flex-direction:column;}
-.ai-shell{height:100%;display:flex;flex-direction:column;max-width:900px;margin:0 auto;width:100%;}
-.ai-head{padding:18px 16px 10px;display:flex;align-items:center;gap:11px;}
-.ai-avatar{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,#c9a227,#8d6b12);color:#fff;display:grid;place-items:center;font-size:22px;box-shadow:0 5px 18px rgba(0,0,0,.18);flex:none;}
-.ai-head h2{margin:0;font-size:18px;color:var(--ink);}
-.ai-head p{margin:3px 0 0;color:var(--ink-faint);font-size:11px;line-height:1.45;}
+.ai-shell{height:100%;display:flex;flex-direction:column;max-width:900px;margin:0 auto;width:100%;min-height:0;}
+.ai-head{padding:14px 16px 8px;display:flex;align-items:center;gap:10px;flex:none;transition:padding .2s ease;}
+.ai-avatar{width:38px;height:38px;border-radius:13px;background:linear-gradient(135deg,#c9a227,#8d6b12);color:#fff;display:grid;place-items:center;font-size:19px;box-shadow:0 5px 18px rgba(0,0,0,.18);flex:none;transition:width .2s ease,height .2s ease,font-size .2s ease;}
+.ai-head h2{margin:0;font-size:16px;color:var(--ink);}
+.ai-head p{margin:3px 0 0;color:var(--ink-faint);font-size:11px;line-height:1.45;max-height:30px;overflow:hidden;transition:max-height .2s ease,margin .2s ease,opacity .2s ease;}
 .ai-status{margin-left:auto;font-size:10px;color:#4f8b5b;border:1px solid rgba(79,139,91,.25);background:rgba(79,139,91,.08);padding:5px 8px;border-radius:999px;white-space:nowrap;}
-.ai-chat{flex:1;overflow:auto;padding:8px 14px 14px;scroll-behavior:smooth;}
+.ai-chat{flex:1 1 auto;min-height:0;overflow:auto;padding:8px 14px 14px;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;}
 .ai-msg{display:flex;gap:9px;margin:10px 0;align-items:flex-start;}
 .ai-msg.user{justify-content:flex-end;}
-.ai-msg.user .ai-bubble{background:var(--gold);color:#fff;border-radius:18px 18px 5px 18px;max-width:82%;}
-.ai-msg.assistant .ai-bubble{background:var(--card);border:1px solid var(--line);color:var(--ink);border-radius:5px 18px 18px 18px;max-width:92%;box-shadow:0 2px 10px rgba(0,0,0,.04);}
+.ai-msg.user .ai-bubble{background:var(--gold);color:#fff;border-radius:18px 18px 5px 18px;max-width:85%;}
+.ai-msg.assistant .ai-bubble{background:var(--card);border:1px solid var(--line);color:var(--ink);border-radius:5px 18px 18px 18px;max-width:96%;box-shadow:0 2px 10px rgba(0,0,0,.04);}
 .ai-mini-avatar{width:30px;height:30px;border-radius:10px;background:var(--panel);border:1px solid var(--line);display:grid;place-items:center;font-size:15px;flex:none;}
-.ai-bubble{padding:11px 13px;font-size:13px;line-height:1.7;word-break:break-word;}
+.ai-bubble{padding:12px 14px;font-size:14.5px;line-height:1.75;word-break:break-word;}
+/* 對話開始後，自動收合上方工具與提示，讓回答欄位有更多空間 */
+.ai-shell.chatting .ai-head{padding:8px 16px 4px;}
+.ai-shell.chatting .ai-avatar{width:30px;height:30px;font-size:15px;}
+.ai-shell.chatting .ai-head h2{font-size:14px;}
+.ai-shell.chatting .ai-head p{max-height:0;margin:0;opacity:0;}
+.ai-shell.chatting .ai-suggestions{display:none;}
+.ai-quick-panel{transition:max-height .2s ease,opacity .2s ease,padding .2s ease,margin .2s ease;max-height:200px;opacity:1;overflow:hidden;}
+.ai-shell.tools-hidden .ai-quick-panel{max-height:0;padding-top:0;padding-bottom:0;margin-top:0;margin-bottom:0;border-width:0;opacity:0;}
+#aiToolsToggle{border:1px solid var(--line);background:transparent;color:var(--ink-dim);border-radius:10px;padding:4px 8px;font-size:11px;cursor:pointer;white-space:nowrap;}
+#aiToolsToggle:hover{color:var(--ink);background:var(--surface2);}
 .ai-bubble p{margin:0 0 7px}.ai-bubble p:last-child{margin-bottom:0}
 .ai-section-title{font-weight:800;font-size:12px;margin:9px 0 5px;color:var(--gold);}
 .ai-law-card{border:1px solid var(--line);background:var(--panel);border-radius:11px;padding:9px 10px;margin:6px 0;cursor:pointer;}
@@ -455,7 +465,7 @@ body.ai-mode main{padding:0 0 calc(70px + var(--safe-bottom));overflow:hidden;}
           <h2>iMetroCop AI 法規助理</h2>
           <p>離線智慧問答・僅依本頁內建法規與情境資料回答</p>
         </div>
-        <div class="ai-actions"><div class="ai-status">● 離線模式</div><button id="aiClear" class="ai-clear" type="button">清除對話</button></div>
+        <div class="ai-actions"><div class="ai-status">● 離線模式</div><div style="display:flex;gap:5px;"><button id="aiToolsToggle" type="button">🧰 工具</button><button id="aiClear" class="ai-clear" type="button">清除對話</button></div></div>
       </div>
       <div class="ai-quick-panel">
         <div class="ai-quick-title">🚨 第一線快速工具</div>
@@ -1117,6 +1127,17 @@ const aiSend = document.getElementById('aiSend');
 const aiSuggestions = document.getElementById('aiSuggestions');
 const aiClear = document.getElementById('aiClear');
 const aiToolButtons = document.querySelectorAll('.ai-tool');
+const aiShell = document.querySelector('.ai-shell');
+const aiToolsToggle = document.getElementById('aiToolsToggle');
+
+/* 手機畫面寸土寸金：開始對話後自動收合上方工具列與提示問題，讓回答欄位變大；
+   使用者仍可隨時按「🧰 工具」手動展開／收合。 */
+function aiEnterChatMode(){
+  if(!aiShell.classList.contains('chatting')){
+    aiShell.classList.add('chatting','tools-hidden');
+  }
+}
+aiToolsToggle.addEventListener('click', ()=>{ aiShell.classList.toggle('tools-hidden'); });
 
 const AI_INTENTS = [
   {keys:['無票','逃票','車票失效','失效車票','冒用車票','不付錢','沒買票'], scenario:'s01'},
@@ -1484,12 +1505,14 @@ function aiBindToolActions(msg){
 
 aiToolButtons.forEach(btn=>btn.addEventListener('click',()=>{
   aiToolButtons.forEach(b=>b.classList.remove('active')); btn.classList.add('active');
+  aiEnterChatMode();
   if(btn.dataset.tool==='decision') aiRenderDecisionMenu();
   else aiRenderToolMenu(btn.dataset.tool);
 }));
 
 function aiAsk(q){
   q=q.trim(); if(!q) return;
+  aiEnterChatMode();
   aiAddMessage('user',aiEscape(q).replace(/\n/g,'<br>'));
   aiSend.disabled=true; aiInput.disabled=true;
   const t=aiTyping();
@@ -1514,7 +1537,7 @@ aiSend.addEventListener('click',()=>{const q=aiInput.value; aiInput.value=''; ai
 aiInput.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();aiSend.click();}});
 aiInput.addEventListener('input',()=>{aiInput.style.height='auto';aiInput.style.height=Math.min(aiInput.scrollHeight,110)+'px';});
 aiSuggestions.querySelectorAll('.ai-suggestion').forEach(btn=>btn.addEventListener('click',()=>{aiInput.value=btn.textContent;aiSend.click();}));
-aiClear.addEventListener('click',()=>{aiWelcome(); aiInput.value=''; aiToolButtons.forEach(b=>b.classList.remove('active')); aiInput.focus();});
+aiClear.addEventListener('click',()=>{aiWelcome(); aiInput.value=''; aiToolButtons.forEach(b=>b.classList.remove('active')); aiShell.classList.remove('chatting','tools-hidden'); aiInput.focus();});
 aiWelcome();
 
 /* ---------- TAB NAV ---------- */
