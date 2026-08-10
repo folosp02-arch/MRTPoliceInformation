@@ -394,6 +394,31 @@ body.ai-mode main{padding:0 0 calc(70px + var(--safe-bottom));overflow:hidden;}
 .ai-judgment b{display:block;margin-bottom:4px;color:var(--ink)}
 .ai-chip{display:inline-block;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 8px;margin:3px 3px 0 0;font-size:11px;color:var(--ink-dim)}
 .ai-divider{height:1px;background:var(--line);margin:12px 0}
+
+.ai-quick-panel{margin:8px 0 4px;padding:10px 11px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.ai-quick-title{font-size:11px;font-weight:800;color:var(--ink-faint);letter-spacing:.8px;margin-bottom:8px}
+.ai-quick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.ai-tool{border:1px solid var(--line);background:var(--surface2);color:var(--ink);border-radius:10px;padding:9px 5px;font-size:17px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px}
+.ai-tool span{font-size:11px;font-weight:700}
+.ai-tool:active{background:var(--line)}
+.ai-tool.active{border-color:var(--gold);box-shadow:0 0 0 1px rgba(201,162,39,.18) inset}
+.ai-tool-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px;margin:8px 0;cursor:pointer}
+.ai-tool-card:active{background:var(--surface2)}
+.ai-tool-card .tool-title{font-weight:800;font-size:13px;color:var(--ink)}
+.ai-tool-card .tool-desc{font-size:11.5px;color:var(--ink-dim);line-height:1.55;margin-top:3px}
+.ai-decision{margin-top:8px;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:11px}
+.ai-decision h3{font-size:14px;margin:0 0 5px;color:var(--ink)}
+.ai-decision .decision-sub{font-size:11.5px;color:var(--ink-dim);line-height:1.55;margin-bottom:10px}
+.ai-q{padding:10px 0;border-top:1px solid var(--line)}
+.ai-q:first-child{border-top:0;padding-top:2px}
+.ai-q-label{font-size:12px;font-weight:700;line-height:1.5;color:var(--ink);margin-bottom:7px}
+.ai-q-options{display:flex;flex-wrap:wrap;gap:6px}
+.ai-option{border:1px solid var(--line);background:var(--surface2);color:var(--ink-dim);border-radius:999px;padding:6px 9px;font-size:11px;cursor:pointer}
+.ai-option.selected{background:rgba(201,162,39,.14);border-color:var(--gold);color:var(--ink);font-weight:700}
+.ai-result{margin-top:10px;border-radius:10px;padding:10px 11px;border:1px solid var(--line);background:var(--surface2);font-size:12px;line-height:1.65}
+.ai-result.green{border-color:#4c9a68}.ai-result.yellow{border-color:var(--gold)}.ai-result.red{border-color:#b65b5b}
+.ai-result b{display:block;margin-bottom:3px;color:var(--ink)}
+.ai-mini-action{display:inline-flex;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:6px 9px;margin:5px 4px 0 0;font-size:11px;cursor:pointer}
 @media (min-width:700px){.ai-chat{padding-left:30px;padding-right:30px}.ai-composer{padding-left:30px;padding-right:30px}.ai-suggestions{padding-left:30px;padding-right:30px}}
 
 </style>
@@ -431,6 +456,14 @@ body.ai-mode main{padding:0 0 calc(70px + var(--safe-bottom));overflow:hidden;}
           <p>離線智慧問答・僅依本頁內建法規與情境資料回答</p>
         </div>
         <div class="ai-actions"><div class="ai-status">● 離線模式</div><button id="aiClear" class="ai-clear" type="button">清除對話</button></div>
+      </div>
+      <div class="ai-quick-panel">
+        <div class="ai-quick-title">🚨 第一線快速工具</div>
+        <div class="ai-quick-grid">
+          <button class="ai-tool" data-tool="scenarios">⚡<span>勤務情境</span></button>
+          <button class="ai-tool" data-tool="decision">⚖️<span>條件判斷</span></button>
+          <button class="ai-tool" data-tool="popular">🚔<span>常見勤務</span></button>
+        </div>
       </div>
       <div class="ai-chat" id="aiChat"></div>
       <div class="ai-suggestions" id="aiSuggestions">
@@ -1081,6 +1114,7 @@ const aiInput = document.getElementById('aiInput');
 const aiSend = document.getElementById('aiSend');
 const aiSuggestions = document.getElementById('aiSuggestions');
 const aiClear = document.getElementById('aiClear');
+const aiToolButtons = document.querySelectorAll('.ai-tool');
 
 const AI_INTENTS = [
   {keys:['無票','逃票','車票失效','失效車票','冒用車票','不付錢','沒買票'], scenario:'s01'},
@@ -1311,6 +1345,120 @@ function aiBindCards(msg){
   });
 }
 
+
+const AI_DECISION_FLOWS = {
+  identity:{
+    title:'查證身分條件判斷', icon:'🧑',
+    desc:'依目前內建的警察職權行使法情境資料，先確認是否存在法定事由，再判斷可採取的措施。',
+    questions:[
+      {q:'是否有警職法第6條所列查證身分的法定事由？', opts:[['有','yes'],['沒有','no'],['不確定','unknown']]},
+      {q:'是否需要採取攔停、詢問或要求出示證件等必要措施？', opts:[['是','yes'],['否','no'],['不確定','unknown']]},
+      {q:'是否已能在現場查證身分？', opts:[['可以','yes'],['無法查證','no'],['不確定','unknown']]}
+    ],
+    result(a){
+      if(a[0]==='no') return ['red','目前資料不足以支持依查證身分規定處理','未確認法定事由前，不宜僅因「可疑」就直接套用查證身分。'];
+      if(a[0]==='unknown') return ['yellow','先確認法定事由','建議先核對警職法第6條具體事由，再決定是否採取第7條措施。'];
+      if(a[1]==='no') return ['yellow','注意必要性原則','即使有法定事由，仍應依必要程度採取措施。'];
+      if(a[2]==='no') return ['green','可能進入進一步查證程序','目前內建情境資料指出，顯然無法查證身分且符合要件時，得帶往勤務處所；時間自攔停起不得逾3小時，並應依規定報告及通知。'];
+      return ['green','可依查證身分程序處理','目前資料顯示可先依警職法第7條採取必要的攔停、詢問或要求出示證件措施。'];
+    }, refs:[162,163]
+  },
+  restraint:{
+    title:'管束條件判斷', icon:'🛡️',
+    desc:'重點不是「有沒有喝醉」，而是是否符合警職法第19條的法定管束要件。',
+    questions:[
+      {q:'是否屬酒醉、瘋狂、意圖自殺、暴行鬥毆或其他有危害公共安全之虞情形？', opts:[['是','yes'],['否','no'],['不確定','unknown']]},
+      {q:'是否已達「非管束不能救護生命、身體，或不能預防傷害／危害」的程度？', opts:[['是','yes'],['否','no'],['不確定','unknown']]},
+      {q:'目前危險或危害是否仍持續？', opts:[['是','yes'],['否','no'],['不確定','unknown']]}
+    ],
+    result(a){
+      if(a[0]==='no'||a[1]==='no') return ['red','目前不宜直接認定可以管束','單純酒醉或情緒失控本身，不等於當然符合管束要件；應確認第19條法定條件。'];
+      if(a[0]==='unknown'||a[1]==='unknown') return ['yellow','需要補充現場事實','先確認是否已達「非管束不能救護／預防危害」程度。'];
+      if(a[2]==='no') return ['yellow','危險結束後應注意終止管束','內建資料指出，危險或危害結束應即終止管束，並通知家屬、關係人或適當機關（構）人員保護。'];
+      return ['green','符合目前內建資料的管束判斷方向','若確實符合警職法第19條要件，可依法管束；最長不得逾24小時，並應依相關規定處理。'];
+    }, refs:[175,176]
+  },
+  retain:{
+    title:'危險物品扣留條件判斷', icon:'🔒',
+    desc:'針對軍器、凶器或其他危險物品，先確認是否屬可扣留標的及是否有預防危害之必要。',
+    questions:[
+      {q:'現場物品是否屬軍器、凶器或其他危險物品？', opts:[['是','yes'],['否','no'],['不確定','unknown']]},
+      {q:'是否有為預防危害而扣留的必要？', opts:[['是','yes'],['否','no'],['不確定','unknown']]}
+    ],
+    result(a){
+      if(a[0]==='no'||a[1]==='no') return ['red','目前不支持直接扣留','應先確認物品性質及預防危害之必要性。'];
+      if(a.includes('unknown')) return ['yellow','先確認物品性質與必要性','若無法判斷是否屬危險物品或是否有扣留必要，先補充現場資訊。'];
+      return ['green','可進一步依警職法第21條處理','內建資料指出，符合要件時得扣留；並應依第22條簽發扣留物清單、妥善保管，後續依規定返還或處理。'];
+    }, refs:[177,178,179,180]
+  },
+  social:{
+    title:'社維法現行行為即時制止判斷', icon:'🚨',
+    desc:'先確認是否屬現行違反社會秩序維護法之行為，再判斷通知到場或強制到場。',
+    questions:[
+      {q:'目前是否正在發生違反社會秩序維護法的行為？', opts:[['是','yes'],['否','no'],['不確定','unknown']]},
+      {q:'是否需要立即制止行為以維持現場秩序？', opts:[['是','yes'],['否','no'],['不確定','unknown']]},
+      {q:'行為人是否拒絕依通知到場？', opts:[['是','yes'],['否','no'],['不確定','unknown']]}
+    ],
+    result(a){
+      if(a[0]==='no') return ['red','目前不符合現行行為判斷方向','應先確認是否確實屬現行違反社維法行為。'];
+      if(a.includes('unknown')) return ['yellow','需要補充現場狀況','先確認行為是否正在發生，以及是否需要立即制止。'];
+      if(a[2]==='yes') return ['green','可進一步依社維法第42條判斷強制到場','內建資料指出，現行違反社維法行為得即時制止並逕行通知到場；不服通知者得強制到場。'];
+      return ['green','可依社維法現行行為程序處理','可先即時制止並依規定通知到場；若已確悉姓名、住所或居所且無逃亡之虞，則另依通知程序辦理。'];
+    }, refs:[107,106,109]
+  }
+};
+
+function aiRenderToolMenu(kind){
+  const data={
+    scenarios:[['s09','🧑 查證身分'],['s10','🛡️ 管束'],['s11','🔒 扣留危險物'],['s03','👊 打架／互毆'],['s04','💣 危險物品'],['s15','🚨 爆裂物'],['s16','🎒 遺失物'],['s13','🚇 行車事故']],
+    popular:[['s01','🎫 無票／逃票'],['s02','🍺 酒醉滋事'],['s03','👊 打架'],['s09','🧑 查證身分'],['s10','🛡️ 管束'],['s18','⚠️ 社維法現行行為'],['s19','🚧 闖入軌道'],['s14','🗺️ 管轄判斷']]
+  }[kind]||[];
+  let html='<div class="ai-section-title">'+(kind==='popular'?'🚔 常見勤務':'⚡ 勤務情境')+'</div><div class="ai-tool-card-grid">';
+  data.forEach(([id,label])=>{html+=`<button class="ai-mini-action" data-scenario="${id}">${label}</button>`;});
+  html+='</div><div class="ai-note">點選後直接開啟原有「情境快答」內容。</div>';
+  const msg=aiAddMessage('assistant',html); aiBindToolActions(msg);
+}
+
+function aiRenderDecisionMenu(){
+  const items=[['identity','🧑 查證身分','判斷是否符合查證身分的法定事由與必要措施'],['restraint','🛡️ 管束','判斷是否達到警職法第19條管束要件'],['retain','🔒 扣留危險物','判斷危險物品是否具扣留必要'],['social','🚨 社維法現行行為','判斷即時制止、通知到場與強制到場方向']];
+  let html='<div class="ai-section-title">⚖️ 條件判斷器</div><p>選擇要判斷的勤務事項，系統會逐題確認條件；這不是自動下法律結論，而是協助你快速核對目前內建資料。</p>';
+  items.forEach(([id,t,d])=>html+=`<div class="ai-tool-card" data-decision="${id}"><div class="tool-title">${t}</div><div class="tool-desc">${d}</div></div>`);
+  const msg=aiAddMessage('assistant',html); aiBindToolActions(msg);
+}
+
+function aiRenderDecision(id){
+  const f=AI_DECISION_FLOWS[id]; if(!f) return;
+  const state=Array(f.questions.length).fill(null);
+  let html=`<div class="ai-decision" data-flow="${id}"><h3>${f.icon} ${aiEscape(f.title)}</h3><div class="decision-sub">${aiEscape(f.desc)}</div>`;
+  f.questions.forEach((x,i)=>{
+    html+=`<div class="ai-q" data-q="${i}"><div class="ai-q-label">${i+1}. ${aiEscape(x.q)}</div><div class="ai-q-options">${x.opts.map(([label,val])=>`<button class="ai-option" data-value="${val}">${aiEscape(label)}</button>`).join('')}</div></div>`;
+  });
+  html+='<div class="ai-result" data-result>請依序回答上方問題。</div></div>';
+  const msg=aiAddMessage('assistant',html);
+  const box=msg.querySelector('.ai-decision');
+  box.querySelectorAll('.ai-q').forEach((qEl,i)=>qEl.querySelectorAll('.ai-option').forEach(btn=>btn.addEventListener('click',()=>{
+    qEl.querySelectorAll('.ai-option').forEach(b=>b.classList.remove('selected')); btn.classList.add('selected'); state[i]=btn.dataset.value;
+    const result=box.querySelector('[data-result]');
+    if(state.every(Boolean)){
+      const [cls,title,text]=f.result(state); result.className='ai-result '+cls; result.innerHTML=`<b>${aiEscape(title)}</b>${aiEscape(text)}`;
+      const refs=f.refs.map(x=>ART_BY_ID[x]).filter(Boolean);
+      result.innerHTML+=`<div>${refs.map(a=>`<button class="ai-mini-action" data-id="${a.id}">${aiEscape(a.law)} ${aiEscape(a.title)}</button>`).join('')}</div>`;
+      result.querySelectorAll('.ai-mini-action').forEach(b=>b.addEventListener('click',()=>openArticleSheet(parseInt(b.dataset.id),'')));
+    }else result.innerHTML='已完成 '+state.filter(Boolean).length+' / '+state.length+' 題，請繼續回答。';
+  })));
+}
+
+function aiBindToolActions(msg){
+  msg.querySelectorAll('[data-scenario]').forEach(el=>el.addEventListener('click',()=>openScenarioSheet(el.dataset.scenario)));
+  msg.querySelectorAll('[data-decision]').forEach(el=>el.addEventListener('click',()=>aiRenderDecision(el.dataset.decision)));
+}
+
+aiToolButtons.forEach(btn=>btn.addEventListener('click',()=>{
+  aiToolButtons.forEach(b=>b.classList.remove('active')); btn.classList.add('active');
+  if(btn.dataset.tool==='decision') aiRenderDecisionMenu();
+  else aiRenderToolMenu(btn.dataset.tool);
+}));
+
 function aiAsk(q){
   q=q.trim(); if(!q) return;
   aiAddMessage('user',aiEscape(q).replace(/\n/g,'<br>'));
@@ -1329,14 +1477,15 @@ function aiWelcome(){
   aiAddMessage('assistant',`<p><strong>你好，我是 iMetroCop AI 法規助理。</strong></p>
     <p>不用先想關鍵字，直接描述「發生什麼事」即可。我會先辨識勤務情境，再找相關條文。</p>
     <p>例如：<br>「A8月台有人喝醉一直罵人，可以管束嗎？」<br>「兩個旅客在車廂互毆，其中一人受傷，要怎麼處理？」<br>「發現可疑包裹，員警可以直接打開嗎？」</p>
-    <div class="ai-note">🟢 離線版：不需要 API、不需要後端。所有答案都來自本頁內建資料；不會自行查網路。</div>`);
+    <div class="ai-note">🟢 離線版：不需要 API、不需要後端。所有答案都來自本頁內建資料；不會自行查網路。</div>
+    <div class="ai-note">💡 也可以使用上方「勤務情境／條件判斷／常見勤務」，遇到現場狀況時不用打完整問題。</div>`);
 }
 
 aiSend.addEventListener('click',()=>{const q=aiInput.value; aiInput.value=''; aiInput.style.height='auto'; aiAsk(q);});
 aiInput.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();aiSend.click();}});
 aiInput.addEventListener('input',()=>{aiInput.style.height='auto';aiInput.style.height=Math.min(aiInput.scrollHeight,110)+'px';});
 aiSuggestions.querySelectorAll('.ai-suggestion').forEach(btn=>btn.addEventListener('click',()=>{aiInput.value=btn.textContent;aiSend.click();}));
-aiClear.addEventListener('click',()=>{aiWelcome(); aiInput.value=''; aiInput.focus();});
+aiClear.addEventListener('click',()=>{aiWelcome(); aiInput.value=''; aiToolButtons.forEach(b=>b.classList.remove('active')); aiInput.focus();});
 aiWelcome();
 
 /* ---------- TAB NAV ---------- */
