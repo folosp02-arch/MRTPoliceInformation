@@ -350,11 +350,12 @@ body.ai-mode .searchbar, body.ai-mode .lawfilters{display:none;}
 body.ai-mode main{padding:0 0 calc(70px + var(--safe-bottom));overflow:hidden;}
 .ai-view.active{display:flex;flex-direction:column;}
 .ai-shell{height:100%;display:flex;flex-direction:column;max-width:900px;margin:0 auto;width:100%;min-height:0;}
-.ai-head{padding:14px 16px 8px;display:flex;align-items:center;gap:10px;flex:none;transition:padding .2s ease;}
-.ai-avatar{width:38px;height:38px;border-radius:13px;background:linear-gradient(135deg,#c9a227,#8d6b12);color:#fff;display:grid;place-items:center;font-size:19px;box-shadow:0 5px 18px rgba(0,0,0,.18);flex:none;transition:width .2s ease,height .2s ease,font-size .2s ease;}
-.ai-head h2{margin:0;font-size:16px;color:var(--ink);}
-.ai-head p{margin:3px 0 0;color:var(--ink-faint);font-size:11px;line-height:1.45;max-height:30px;overflow:hidden;transition:max-height .2s ease,margin .2s ease,opacity .2s ease;}
-.ai-status{margin-left:auto;font-size:10px;color:#4f8b5b;border:1px solid rgba(79,139,91,.25);background:rgba(79,139,91,.08);padding:5px 8px;border-radius:999px;white-space:nowrap;}
+.ai-head{padding:8px 14px 6px;display:flex;align-items:center;gap:8px;flex:none;transition:padding .2s ease;}
+.ai-avatar{width:30px;height:30px;border-radius:10px;background:linear-gradient(135deg,#c9a227,#8d6b12);color:#fff;display:grid;place-items:center;font-size:15px;box-shadow:0 3px 10px rgba(0,0,0,.18);flex:none;transition:width .2s ease,height .2s ease,font-size .2s ease;}
+.ai-head-info{flex:1;min-width:0;}
+.ai-head h2{margin:0;font-size:13.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px;}
+.ai-head h2 .dot{width:6px;height:6px;border-radius:50%;background:#4f8b5b;flex:none;box-shadow:0 0 0 3px rgba(79,139,91,.15);}
+.ai-head p{margin:2px 0 0;color:var(--ink-faint);font-size:10px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-height:14px;transition:max-height .2s ease,margin .2s ease,opacity .2s ease;}
 .ai-chat{flex:1 1 auto;min-height:0;overflow:auto;padding:8px 14px 14px;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;}
 .ai-msg{display:flex;gap:9px;margin:10px 0;align-items:flex-start;}
 .ai-msg.user{justify-content:flex-end;}
@@ -363,14 +364,11 @@ body.ai-mode main{padding:0 0 calc(70px + var(--safe-bottom));overflow:hidden;}
 .ai-mini-avatar{width:30px;height:30px;border-radius:10px;background:var(--panel);border:1px solid var(--line);display:grid;place-items:center;font-size:15px;flex:none;}
 .ai-bubble{padding:12px 14px;font-size:14.5px;line-height:1.75;word-break:break-word;}
 /* 對話開始後，自動收合上方工具與提示，讓回答欄位有更多空間 */
-.ai-shell.chatting .ai-head{padding:8px 16px 4px;}
-.ai-shell.chatting .ai-avatar{width:30px;height:30px;font-size:15px;}
-.ai-shell.chatting .ai-head h2{font-size:14px;}
 .ai-shell.chatting .ai-head p{max-height:0;margin:0;opacity:0;}
 .ai-shell.chatting .ai-suggestions{display:none;}
 .ai-quick-panel{transition:max-height .2s ease,opacity .2s ease,padding .2s ease,margin .2s ease;max-height:200px;opacity:1;overflow:hidden;}
 .ai-shell.tools-hidden .ai-quick-panel{max-height:0;padding-top:0;padding-bottom:0;margin-top:0;margin-bottom:0;border-width:0;opacity:0;}
-#aiToolsToggle{border:1px solid var(--line);background:transparent;color:var(--ink-dim);border-radius:10px;padding:4px 8px;font-size:11px;cursor:pointer;white-space:nowrap;}
+#aiToolsToggle{border:1px solid var(--line);background:transparent;color:var(--ink-dim);border-radius:10px;cursor:pointer;white-space:nowrap;}
 #aiToolsToggle:hover{color:var(--ink);background:var(--surface2);}
 .ai-bubble p{margin:0 0 7px}.ai-bubble p:last-child{margin-bottom:0}
 .ai-section-title{font-weight:800;font-size:12px;margin:9px 0 5px;color:var(--gold);}
@@ -394,8 +392,9 @@ body.ai-mode main{padding:0 0 calc(70px + var(--safe-bottom));overflow:hidden;}
 .ai-typing{display:inline-flex;gap:4px;align-items:center}.ai-typing i{width:5px;height:5px;border-radius:50%;background:var(--ink-faint);animation:aiDot 1s infinite}.ai-typing i:nth-child(2){animation-delay:.15s}.ai-typing i:nth-child(3){animation-delay:.3s}
 @keyframes aiDot{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
 
-.ai-actions{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:5px}
-.ai-clear{border:1px solid var(--line);background:transparent;color:var(--ink-dim);border-radius:10px;padding:4px 8px;font-size:11px;cursor:pointer}
+.ai-actions{margin-left:auto;display:flex;flex-direction:row;align-items:center;gap:6px;flex:none;}
+.ai-actions button{width:32px;height:32px;flex:none;display:flex;align-items:center;justify-content:center;font-size:15px;white-space:nowrap;padding:0;}
+.ai-clear{border:1px solid var(--line);background:transparent;color:var(--ink-dim);border-radius:10px;cursor:pointer}
 .ai-clear:hover{color:var(--ink);background:var(--surface2)}
 .ai-confidence{display:flex;align-items:center;gap:7px;margin:8px 0 10px;font-size:11px;color:var(--ink-dim)}
 .ai-confidence .bar{width:72px;height:5px;background:var(--surface2);border-radius:99px;overflow:hidden}
@@ -405,13 +404,12 @@ body.ai-mode main{padding:0 0 calc(70px + var(--safe-bottom));overflow:hidden;}
 .ai-chip{display:inline-block;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 8px;margin:3px 3px 0 0;font-size:11px;color:var(--ink-dim)}
 .ai-divider{height:1px;background:var(--line);margin:12px 0}
 
-.ai-quick-panel{margin:8px 0 4px;padding:10px 11px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
-.ai-quick-title{font-size:11px;font-weight:800;color:var(--ink-faint);letter-spacing:.8px;margin-bottom:8px}
-.ai-quick-grid{display:flex;gap:6px;}
-.ai-tool{border:1px solid var(--line);background:var(--surface2);color:var(--ink);border-radius:10px;padding:8px 3px;font-size:16px;cursor:pointer;display:flex;flex:1 1 0;min-width:0;flex-direction:column;align-items:center;gap:3px;}
-.ai-tool span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
-.ai-tool span{font-size:10.5px;font-weight:700}
-@media (max-width:360px){.ai-tool{font-size:14px;padding:7px 2px}.ai-tool span{font-size:9.5px}}
+.ai-quick-panel{margin:6px 0 4px;padding:8px 9px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.ai-quick-title{font-size:10.5px;font-weight:800;color:var(--ink-faint);letter-spacing:.8px;margin-bottom:6px}
+.ai-quick-grid{display:flex;gap:6px;align-items:stretch;}
+.ai-tool{border:1px solid var(--line);background:var(--surface2);color:var(--ink);border-radius:10px;padding:7px 2px;font-size:15px;cursor:pointer;display:flex;flex:1 1 0;min-width:0;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:46px;}
+.ai-tool span{display:block;width:100%;font-size:9.5px;font-weight:700;line-height:1.15;white-space:normal;word-break:keep-all;text-align:center;}
+@media (max-width:360px){.ai-tool{font-size:13px;}.ai-tool span{font-size:8.8px;}}
 .ai-tool:active{background:var(--line)}
 .ai-tool.active{border-color:var(--gold);box-shadow:0 0 0 1px rgba(201,162,39,.18) inset}
 .ai-tool-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px;margin:8px 0;cursor:pointer}
@@ -463,11 +461,11 @@ body.ai-mode main{padding:0 0 calc(70px + var(--safe-bottom));overflow:hidden;}
     <div class="ai-shell">
       <div class="ai-head">
         <div class="ai-avatar">👮</div>
-        <div>
-          <h2>iMetroCop AI 法規助理</h2>
+        <div class="ai-head-info">
+          <h2><span class="dot"></span>iMetroCop AI 法規助理</h2>
           <p>離線智慧問答・僅依本頁內建法規與情境資料回答</p>
         </div>
-        <div class="ai-actions"><div class="ai-status">● 離線模式</div><div style="display:flex;gap:5px;"><button id="aiToolsToggle" type="button">🧰 工具</button><button id="aiClear" class="ai-clear" type="button">清除對話</button></div></div>
+        <div class="ai-actions"><button id="aiToolsToggle" type="button" title="顯示／隱藏工具列">🧰</button><button id="aiClear" class="ai-clear" type="button" title="清除對話">🗑️</button></div>
       </div>
       <div class="ai-quick-panel">
         <div class="ai-quick-title">🚨 第一線快速工具</div>
