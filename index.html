@@ -407,9 +407,9 @@ body.ai-mode main{padding:0 0 calc(70px + var(--safe-bottom));overflow:hidden;}
 .ai-quick-panel{margin:6px 0 4px;padding:8px 9px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
 .ai-quick-title{font-size:10.5px;font-weight:800;color:var(--ink-faint);letter-spacing:.8px;margin-bottom:6px}
 .ai-quick-grid{display:flex;gap:6px;align-items:stretch;}
-.ai-tool{border:1px solid var(--line);background:var(--surface2);color:var(--ink);border-radius:10px;padding:7px 2px;font-size:15px;cursor:pointer;display:flex;flex:1 1 0;min-width:0;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:46px;}
-.ai-tool span{display:block;width:100%;font-size:9.5px;font-weight:700;line-height:1.15;white-space:normal;word-break:keep-all;text-align:center;}
-@media (max-width:360px){.ai-tool{font-size:13px;}.ai-tool span{font-size:8.8px;}}
+.ai-tool{border:1px solid var(--line);background:var(--surface2);color:var(--ink);border-radius:10px;padding:10px 2px;cursor:pointer;display:flex;flex:1 1 0;min-width:0;align-items:center;justify-content:center;min-height:38px;}
+.ai-tool span{display:block;width:100%;font-size:11.5px;font-weight:700;line-height:1.2;white-space:normal;word-break:keep-all;text-align:center;}
+@media (max-width:360px){.ai-tool span{font-size:10.3px;}}
 .ai-tool:active{background:var(--line)}
 .ai-tool.active{border-color:var(--gold);box-shadow:0 0 0 1px rgba(201,162,39,.18) inset}
 .ai-tool-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px;margin:8px 0;cursor:pointer}
@@ -470,10 +470,10 @@ body.ai-mode main{padding:0 0 calc(70px + var(--safe-bottom));overflow:hidden;}
       <div class="ai-quick-panel">
         <div class="ai-quick-title">🚨 第一線快速工具</div>
         <div class="ai-quick-grid">
-          <button class="ai-tool" data-tool="scenarios">⚡<span>勤務情境</span></button>
-          <button class="ai-tool" data-tool="decision">⚖️<span>條件判斷</span></button>
-          <button class="ai-tool" data-tool="popular">🚔<span>常見勤務</span></button>
-          <button class="ai-tool" data-tool="sexual">💜<span>性騷擾案件</span></button>
+          <button class="ai-tool" data-tool="scenarios"><span>勤務情境</span></button>
+          <button class="ai-tool" data-tool="decision"><span>條件判斷</span></button>
+          <button class="ai-tool" data-tool="popular"><span>常見勤務</span></button>
+          <button class="ai-tool" data-tool="sexual"><span>性騷擾案件</span></button>
         </div>
       </div>
       <div class="ai-chat" id="aiChat"></div>
