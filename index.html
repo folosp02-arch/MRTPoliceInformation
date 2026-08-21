@@ -218,11 +218,56 @@ main{
 .compare-current-tag{margin-left:auto; font-size:10px; color:var(--gold-text); font-weight:700; flex-shrink:0;}
 .compare-note{font-size:12px; color:var(--ink-dim); line-height:1.6;}
 
+/* ---------- PENALTY QUICK-REFERENCE ---------- */
+.penalty-filter{padding:0 2px 12px;}
+.penalty-filter input{
+  width:100%; box-sizing:border-box; background:var(--surface); border:1px solid var(--line);
+  border-radius:11px; padding:11px 14px; font-size:13.5px; color:var(--ink); font-family:inherit;
+  box-shadow:var(--card-shadow);
+}
+.penalty-filter input:focus{outline:none; border-color:var(--gold-dim);}
+.penalty-group{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  padding:13px 14px 6px; margin-bottom:10px; box-shadow:var(--card-shadow);
+}
+.penalty-group-title{font-size:13px; font-weight:800; color:var(--ink); margin-bottom:9px;}
+.penalty-row{
+  display:flex; align-items:flex-start; gap:10px; padding:8px 0 9px; cursor:pointer;
+  border-top:1px solid var(--line);
+}
+.penalty-group-title + .penalty-row{border-top:none;}
+.penalty-row-badge{
+  font-family:ui-monospace,monospace; font-size:10.5px; font-weight:800; color:var(--gold-text);
+  background:rgba(169,121,30,0.10); padding:3px 8px; border-radius:6px; flex-shrink:0; margin-top:1px;
+  white-space:nowrap;
+}
+.penalty-row-note{font-size:12.5px; color:var(--ink-dim); line-height:1.65;}
+.penalty-empty{text-align:center; padding:50px 20px; color:var(--ink-faint); font-size:13px;}
+
 .empty-state{
   text-align:center; padding:60px 20px; color:var(--ink-faint);
 }
 .empty-state .icon{font-size:34px; margin-bottom:10px; opacity:0.5;}
 .empty-state p{font-size:13px; line-height:1.7; margin:0;}
+
+/* ---------- SEARCH HISTORY ---------- */
+.history-block{padding:16px 2px 4px;}
+.history-head{
+  display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; padding:0 2px;
+}
+.history-label{font-size:12px; font-weight:700; color:var(--ink-faint);}
+.history-clear{font-size:11.5px; color:var(--ink-faint); cursor:pointer; text-decoration:underline;}
+.history-chips{display:flex; flex-wrap:wrap; gap:8px;}
+.history-chip{
+  display:flex; align-items:center; gap:6px; background:var(--surface); border:1px solid var(--line);
+  border-radius:99px; padding:7px 8px 7px 13px; cursor:pointer; box-shadow:var(--card-shadow);
+}
+.history-chip-text{font-size:12.5px; color:var(--ink); font-weight:600;}
+.history-chip-x{
+  font-size:10px; color:var(--ink-faint); width:18px; height:18px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.history-chip-x:active{background:var(--surface2);}
 
 /* ---------- BROWSE (law list) ---------- */
 .law-group{
@@ -471,10 +516,20 @@ nav.tabbar button.active{color:var(--gold-text);}
     <div id="favList"></div>
   </section>
 
+  <!-- PENALTY QUICK-REFERENCE VIEW -->
+  <section class="view" id="view-penalty">
+    <div class="section-label">常見情境罰則速查　點選可查看完整條文</div>
+    <div class="penalty-filter">
+      <input id="penaltyFilterInput" type="text" inputmode="search" placeholder="篩選情境，如：鬥毆、酒駕、無票…" autocomplete="off">
+    </div>
+    <div id="penaltyTable"></div>
+  </section>
+
 </main>
 
 <nav class="tabbar">
   <button data-view="search" class="active"><span class="ic">🔍</span><span class="lb">搜尋</span></button>
+  <button data-view="penalty"><span class="ic">📋</span><span class="lb">罰則速查</span></button>
   <button data-view="scenario"><span class="ic">⚡</span><span class="lb">情境快答</span></button>
   <button data-view="browse"><span class="ic">📚</span><span class="lb">法規瀏覽</span></button>
   <button data-view="fav"><span class="ic">⭐</span><span class="lb">收藏</span></button>
@@ -628,6 +683,54 @@ RELATED_GROUPS.forEach(g=>{
   });
 });
 
+/* ---------- PENALTY QUICK-REFERENCE ----------
+   Reuses RELATED_GROUPS (the same curated situations used for the
+   article "⇄ 比較" panel) so the two features never drift apart. */
+function renderPenaltyTable(filterText){
+  const q = (filterText||'').trim().toLowerCase();
+  const synonyms = q ? getSynonymTerms(q) : [];
+  const terms = q ? [q, ...synonyms.map(s=>s.toLowerCase())] : [];
+
+  const matchedGroups = RELATED_GROUPS.map(g=>{
+    if(!terms.length) return g;
+    const labelHay = g.label.toLowerCase();
+    const hitGroup = terms.some(t=>labelHay.includes(t));
+    if(hitGroup) return g;
+    const items = g.items.filter(it=>{
+      const art = ART_BY_ID[it.id];
+      const hay = (it.note + ' ' + (art? art.law+art.title : '')).toLowerCase();
+      return terms.some(t=>hay.includes(t));
+    });
+    return items.length ? {label:g.label, items} : null;
+  }).filter(Boolean);
+
+  const wrap = document.getElementById('penaltyTable');
+  if(!matchedGroups.length){
+    wrap.innerHTML = `<div class="penalty-empty">找不到「${escapeHtml(filterText)}」相關的情境罰則<br>可換個關鍵字，或到「搜尋」查全部法規全文</div>`;
+    return;
+  }
+
+  let html = '';
+  matchedGroups.forEach(g=>{
+    html += `<div class="penalty-group"><div class="penalty-group-title">${escapeHtml(g.label)}</div>`;
+    g.items.forEach(it=>{
+      const art = ART_BY_ID[it.id];
+      if(!art) return;
+      const meta = LAW_META[art.law] || {short:art.law};
+      const numLabel = art.title.replace(/^第\s*/,'').replace(/\s*條$/,'').replace(/\s*點$/,'');
+      html += `<div class="penalty-row" data-id="${it.id}">
+        <span class="penalty-row-badge">${escapeHtml(meta.short)}${escapeHtml(numLabel)}</span>
+        <span class="penalty-row-note">${escapeHtml(it.note)}</span>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  wrap.innerHTML = html;
+  wrap.querySelectorAll('.penalty-row').forEach(row=>{
+    row.addEventListener('click', ()=> openArticleSheet(parseInt(row.dataset.id), ''));
+  });
+}
+
 
 let activeLawFilter = 'all';
 let favorites = [];
@@ -778,6 +881,72 @@ const searchbarEl = document.getElementById('searchbar');
 const clearBtn = document.getElementById('clearBtn');
 const resultsWrap = document.getElementById('searchResultsWrap');
 
+/* ---------- SEARCH HISTORY ---------- */
+let searchHistory = [];
+try{ searchHistory = JSON.parse(localStorage.getItem('jw_search_history')||'[]'); }catch(e){ searchHistory = []; }
+function saveHistory(){ try{ localStorage.setItem('jw_search_history', JSON.stringify(searchHistory)); }catch(e){} }
+function addToHistory(term){
+  term = (term||'').trim();
+  if(!term) return;
+  const i = searchHistory.indexOf(term);
+  if(i>=0) searchHistory.splice(i,1);
+  searchHistory.unshift(term);
+  if(searchHistory.length>12) searchHistory.length = 12;
+  saveHistory();
+}
+function removeFromHistory(term){
+  const i = searchHistory.indexOf(term);
+  if(i>=0){ searchHistory.splice(i,1); saveHistory(); }
+}
+
+function renderEmptyState(){
+  let html = '';
+  if(searchHistory.length){
+    html += `<div class="history-block">
+      <div class="history-head">
+        <span class="history-label">🕘 最近搜尋</span>
+        <span class="history-clear" id="historyClearBtn">清除全部</span>
+      </div>
+      <div class="history-chips">`;
+    searchHistory.forEach(term=>{
+      html += `<div class="history-chip" data-term="${escapeAttr(term)}">
+        <span class="history-chip-text">${escapeHtml(term)}</span>
+        <span class="history-chip-x" data-remove="${escapeAttr(term)}">✕</span>
+      </div>`;
+    });
+    html += `</div></div>`;
+  }
+  html += `<div class="empty-state">
+      <div class="icon">🔎</div>
+      <p>輸入關鍵字搜尋全部法規／要點全文，支援同義詞查詢<br>例如輸入「打架」可找到「鬥毆」，輸入「偷」可找到「竊盜」<br>試試「無票」「查證身分」「扣留」「爆裂物」「跟蹤」</p>
+    </div>`;
+  resultsWrap.innerHTML = html;
+
+  resultsWrap.querySelectorAll('.history-chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      const term = chip.dataset.term;
+      searchInput.value = term;
+      addToHistory(term);
+      runSearch();
+    });
+  });
+  resultsWrap.querySelectorAll('.history-chip-x').forEach(x=>{
+    x.addEventListener('click', (ev)=>{
+      ev.stopPropagation();
+      removeFromHistory(x.dataset.remove);
+      renderEmptyState();
+    });
+  });
+  const clearBtn = document.getElementById('historyClearBtn');
+  if(clearBtn){
+    clearBtn.addEventListener('click', ()=>{
+      searchHistory = [];
+      saveHistory();
+      renderEmptyState();
+    });
+  }
+}
+
 function runSearch(){
   const q = searchInput.value.trim();
   searchbarEl.classList.toggle('has-text', q.length>0);
@@ -789,11 +958,7 @@ function runSearch(){
 
   if(!q){
     if(activeLawFilter==='all'){
-      resultsWrap.innerHTML = `
-        <div class="empty-state">
-          <div class="icon">🔎</div>
-          <p>輸入關鍵字搜尋全部法規／要點全文，支援同義詞查詢<br>例如輸入「打架」可找到「鬥毆」，輸入「偷」可找到「竊盜」<br>試試「無票」「查證身分」「扣留」「爆裂物」「跟蹤」</p>
-        </div>`;
+      renderEmptyState();
       return;
     }
     // show all of that law's articles, grouped simply
@@ -866,6 +1031,21 @@ function renderArticleList(list, q){
 
 searchInput.addEventListener('input', runSearch);
 clearBtn.addEventListener('click', ()=>{ searchInput.value=''; runSearch(); searchInput.focus(); });
+
+let historyDebounceTimer = null;
+searchInput.addEventListener('input', ()=>{
+  clearTimeout(historyDebounceTimer);
+  const val = searchInput.value.trim();
+  if(val) historyDebounceTimer = setTimeout(()=> addToHistory(val), 900);
+});
+searchInput.addEventListener('keydown', (ev)=>{
+  if(ev.key === 'Enter'){
+    clearTimeout(historyDebounceTimer);
+    const val = searchInput.value.trim();
+    if(val) addToHistory(val);
+    searchInput.blur();
+  }
+});
 
 /* ---------- SCENARIO VIEW ---------- */
 const scenarioGrid = document.getElementById('scenarioGrid');
@@ -1149,6 +1329,7 @@ sheetShareBtn.addEventListener('click', shareCurrentSheet);
 const tabButtons = document.querySelectorAll('nav.tabbar button');
 const views = {
   search: document.getElementById('view-search'),
+  penalty: document.getElementById('view-penalty'),
   scenario: document.getElementById('view-scenario'),
   browse: document.getElementById('view-browse'),
   fav: document.getElementById('view-fav'),
@@ -1164,6 +1345,10 @@ tabButtons.forEach(btn=>{
     if(key==='fav') renderFavs();
   });
 });
+
+const penaltyFilterInput = document.getElementById('penaltyFilterInput');
+penaltyFilterInput.addEventListener('input', ()=> renderPenaltyTable(penaltyFilterInput.value));
+renderPenaltyTable('');
 
 /* ---------- THEME TOGGLE ---------- */
 const themeToggle = document.getElementById('themeToggle');
