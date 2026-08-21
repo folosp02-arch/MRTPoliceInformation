@@ -480,6 +480,7 @@ nav.tabbar button.active{color:var(--gold-text);}
     </div>
     <div class="header-actions">
       <button class="announce-btn" id="announceBtn" aria-label="查看公告" style="display:none;">📢</button>
+      <button class="announce-btn" id="contactBtn" aria-label="意見回饋" style="display:none;">💬</button>
       <button class="theme-toggle" id="themeToggle" aria-label="切換深色／淺色模式">🌙</button>
     </div>
   </div>
@@ -1413,6 +1414,24 @@ announceOkBtn.addEventListener('click', ()=>hideAnnouncement(true));
 announceBackdrop.addEventListener('click', ()=>hideAnnouncement(true));
 announceBtn.addEventListener('click', ()=>showAnnouncement());
 initAnnouncement();
+
+/* ---------- CONTACT / FEEDBACK ----------
+   Fill in your own LINE link below to let users add you as a friend
+   or open a chat with you directly.
+   - Personal account "share profile" link looks like: https://line.me/ti/p/~yourID
+   - LINE Official Account link looks like: https://line.me/R/ti/p/@yourOAID
+   Set `enabled: false` to hide the button entirely. */
+const CONTACT = {
+  enabled: true,
+  lineUrl: 'https://line.me/ti/p/~your-line-id'
+};
+const contactBtn = document.getElementById('contactBtn');
+if(CONTACT.enabled && CONTACT.lineUrl){
+  contactBtn.style.display = 'flex';
+  contactBtn.addEventListener('click', ()=>{
+    window.open(CONTACT.lineUrl, '_blank', 'noopener');
+  });
+}
 
 /* init */
 views.search.classList.add('active');
